@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Atkinson_Hyperlegible, IBM_Plex_Mono } from "next/font/google";
 import { ThemeProvider } from "@/lib/theme";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const atkinson = Atkinson_Hyperlegible({
@@ -63,7 +64,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-screen bg-bg font-sans text-text antialiased">
-        <ThemeProvider>{children}</ThemeProvider>
+        <Providers>
+          <ThemeProvider>{children}</ThemeProvider>
+        </Providers>
       </body>
     </html>
   );
