@@ -49,6 +49,17 @@ Ordem definida pelo Rafael: **PRD → Regras de Negócio → Specs → Epics →
 - [x] Spec 08 Deploy + Observability (transversal)
 - [x] 15 diagramas Mermaid em `docs/research/architecture-diagrams.md`
 
+## Fase 3.5 — Design System + Screen Flow (extra) — **COMPLETA**
+
+- [x] Showcase navegável `/design` com 5 paletas + 4 tipografias + 3 densidades + componentes + motion
+- [x] Direção locked: **Sage + Atkinson Hyperlegible + Aerada + Phosphor**
+- [x] Tokens materializados em `tailwind.config.ts` + `app/globals.css` + `app/layout.tsx`
+- [x] `<ThemeProvider>` com light/dark/system + persistência localStorage
+- [x] shadcn components reescritos pra Sage (button/card/input/textarea/badge)
+- [x] Documentação em `docs/design-system/` (11 arquivos, ~10.4k palavras)
+- [x] Screen flow em `docs/design-system/screen-flow/` (9 arquivos, ~13.8k palavras)
+- [x] 94 telas inventariadas + 5 jornadas + 8 clickflows + 9 state machines
+
 ## Fase 4 — Epics
 
 - [ ] Epic E1: Plataforma Base

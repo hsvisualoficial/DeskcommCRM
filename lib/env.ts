@@ -18,7 +18,7 @@ const isProd = process.env.NODE_ENV === "production";
 const required = (name: string) =>
   isProd
     ? z.string().min(1, `${name} é obrigatória em produção`)
-    : z.string().min(1).optional().default("");
+    : z.string().default("");
 
 const requiredAlways = (name: string) => z.string().min(1, `${name} é obrigatória`);
 

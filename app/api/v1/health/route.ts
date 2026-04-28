@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -22,16 +21,28 @@ async function withTimeout<T>(p: Promise<T>, ms = TIMEOUT_MS): Promise<T> {
 async function checkSupabase(): Promise<Check> {
   const t0 = Date.now();
   try {
-    const supabase = createAdminClient();
-    // SELECT 1 equivalente — usamos uma RPC trivial ou fallback em auth.
-    const { error } = await withTimeout(
-      supabase.from("organizations").select("id").limit(1),
+    // Ping leve via REST com anon key — não precisa de service_role pra health check.
+    // Se chegar 200/401/empty body, conexão e API key estão OK.
+    const url = env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const res = await withTimeout(
+      fetch(`${url}/rest/v1/organizations?select=id&limit=1`, {
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+        },
+        cache: "no-store",
+      }),
     );
-    // Tabela pode ainda não existir no scaffolding; tratamos como degraded mas não down.
-    if (error && !/relation .* does not exist/i.test(error.message)) {
-      return { status: "down", latency_ms: Date.now() - t0, error: error.message };
+    // 200 (lista vazia por RLS) ou 401/403 (auth ok mas RLS bloqueia anon) → conexão OK
+    if (res.status === 200 || res.status === 401 || res.status === 403) {
+      return { status: "ok", latency_ms: Date.now() - t0 };
     }
-    return { status: "ok", latency_ms: Date.now() - t0 };
+    return {
+      status: "down",
+      latency_ms: Date.now() - t0,
+      error: `http_${res.status}`,
+    };
   } catch (e) {
     return {
       status: "down",
