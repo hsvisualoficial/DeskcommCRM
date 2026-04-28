@@ -7,5 +7,6 @@ export type AuditAction =
   | "auth.login_failed"
   | "auth.logout"
   | "auth.mfa_enrolled"
+  | "auth.mfa_success"
   | "auth.mfa_failed"
   | "auth.recovery_code_used";

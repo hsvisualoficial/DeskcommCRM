@@ -15,7 +15,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { env } from "@/lib/env";
 import type { AuditAction } from "./actions";
 
-function isServiceRoleConfigured(): boolean {
+export function isServiceRoleConfigured(): boolean {
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
   return key.length > 50 && !key.startsWith("PLACEHOLDER");
 }

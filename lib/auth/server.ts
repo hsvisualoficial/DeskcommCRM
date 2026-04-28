@@ -103,3 +103,21 @@ export async function requireAuth(): Promise<AuthUser> {
   if (!user) redirect("/login");
   return user;
 }
+
+/**
+ * Returns true if the current session has at least one verified TOTP factor.
+ * Use only in Server Components / Server Actions (cookie session).
+ */
+export async function isMfaEnrolled(): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.mfa.listFactors();
+  return !!data?.totp?.some((f) => f.status === "verified");
+}
+
+/**
+ * MFA enforcement policy: platform admins and tenant `admin` role MUST enroll.
+ * `manager`/`agent`/`viewer` are optional in MVP.
+ */
+export function requiresMfa(role: Role | undefined, isPlatformAdmin: boolean): boolean {
+  return isPlatformAdmin || role === "admin";
+}
