@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Atkinson_Hyperlegible, IBM_Plex_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import { ThemeProvider } from "@/lib/theme";
 import { Providers } from "./providers";
 import "./globals.css";
@@ -66,6 +67,12 @@ export default function RootLayout({
       <body className="min-h-screen bg-bg font-sans text-text antialiased">
         <Providers>
           <ThemeProvider>{children}</ThemeProvider>
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            duration={4000}
+          />
         </Providers>
       </body>
     </html>
