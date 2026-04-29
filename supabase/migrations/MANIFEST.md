@@ -22,6 +22,7 @@ Migrations applied to Supabase project `rrydmwnporysaiysiztn` (sa-east-1, Postgr
 | `20260429080000` | `0014_storage_policies_ai_policy` | EPIC-06 wave 6: private ai-policy bucket (20MB cap, pdf+md MIME) + per-tenant SELECT/INSERT/DELETE RLS on storage.objects (path-prefix org isolation via user_organizations EXISTS subquery) |
 | `20260429090000` | `0015_conversations_rag_optin` | EPIC-06 wave 7 (S-06.07, LGPD L-08): conversations.usable_for_rag + marked_at + marked_by + rag_review_status (tri-state) + partial index on (org, usable_for_rag, marked_at) where true |
 | `20260428000000` | `0016_lgpd_emergency_scope` | EPIC-08 wave 3: lgpd_requests.emergency (boolean, default false) + scope (text check 'contact'/'tenant', default 'contact') + partial index lgpd_requests_emergency_idx on (org, emergency, due_at) where emergency=true |
+| `20260429100000` | `0017_storage_policies_lgpd_exports` | EPIC-08 wave 4 (S-08.04): private lgpd-exports bucket (50MB cap, pdf+json MIME) + per-tenant SELECT RLS on storage.objects (path-prefix org isolation via user_organizations EXISTS subquery). Worker uploads via service-role only — no INSERT/DELETE policies for anon/authenticated. |
 
 ## Reproducibility
 

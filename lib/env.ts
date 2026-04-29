@@ -68,6 +68,11 @@ const schema = z.object({
   // Sentry
   SENTRY_DSN: z.string().optional().default(""),
 
+  // LGPD export (S-08.04)
+  LGPD_SIGNING_KEY: z.string().optional().default(""),
+  LGPD_EXPORT_EXPIRES_HOURS: z.string().optional().default("72"),
+  LGPD_DPO_EMAIL: z.string().optional().default(""),
+
   // Nuvemshop
   NUVEMSHOP_APP_ID: required("NUVEMSHOP_APP_ID"),
   NUVEMSHOP_CLIENT_ID: required("NUVEMSHOP_CLIENT_ID"),
