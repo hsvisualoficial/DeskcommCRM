@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConversationListItem } from "./ConversationListItem";
@@ -36,8 +36,11 @@ export function ConversationList({
     return clientFilter ? all.filter(clientFilter) : all;
   }, [q.data, clientFilter]);
 
-  // Notify parent of currently-visible IDs (for j/k nav).
-  useMemo(() => {
+  // Notify parent of currently-visible IDs (for j/k nav). Must use effect
+  // (not render-time call) — invoking onVisibleChange during render triggers
+  // setState in InboxLayout from inside ConversationList's render phase,
+  // which React 19 forbids.
+  useEffect(() => {
     if (onVisibleChange) onVisibleChange(items.map((i) => i.id));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);

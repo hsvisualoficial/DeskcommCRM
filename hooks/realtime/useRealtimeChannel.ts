@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
@@ -34,13 +34,21 @@ export function useRealtimeChannel(opts: UseRealtimeChannelOpts): { status: Real
 
   const [status, setStatus] = useState<RealtimeStatus>(enabled ? "connecting" : "closed");
 
+  // React 19 strict mode mounts effects twice in dev. If two consumers ever
+  // share the same logical channel name (or the same component re-mounts),
+  // Supabase reuses the existing channel object — calling `.on()` after the
+  // prior `.subscribe()` errors out. Append a stable per-instance suffix so
+  // every hook call owns its own channel topology.
+  const instanceId = useId();
+
   useEffect(() => {
     if (!enabled) {
       setStatus("closed");
       return;
     }
     const supabase = createClient();
-    let channel: RealtimeChannel | null = supabase.channel(name);
+    const channelName = `${name}::${instanceId}`;
+    let channel: RealtimeChannel | null = supabase.channel(channelName);
 
     const handler = (payload: unknown) => {
       onChangeRef.current(payload);
@@ -83,7 +91,7 @@ export function useRealtimeChannel(opts: UseRealtimeChannelOpts): { status: Real
     };
     // intentionally omit onChange (ref); only re-subscribe when channel topology changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, enabled, postgresChanges?.event, postgresChanges?.table, postgresChanges?.filter, postgresChanges?.schema, broadcast?.event]);
+  }, [name, enabled, instanceId, postgresChanges?.event, postgresChanges?.table, postgresChanges?.filter, postgresChanges?.schema, broadcast?.event]);
 
   return { status };
 }
