@@ -93,4 +93,6 @@ export type AuditAction =
   | "platform_admin.incidents_listed"
   | "platform_admin.incident_viewed"
   | "incident.resolved"
-  | "platform_admin.usage_viewed";
+  | "platform_admin.usage_viewed"
+  | "platform_admin.users_listed"
+  | "platform_admin.user_viewed";
