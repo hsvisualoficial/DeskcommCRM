@@ -12,7 +12,7 @@ exposes_contracts:
   - "route./404 /403 /500 /503"
   - "infra.sentry"
   - "infra.web-vitals-budget"
-status: pending
+status: completed (partial: Lighthouse CI + bundle-analyzer + /app/* E2E deferred)
 created_at: 2026-04-28
 owner: Rafael Melgaço
 ---
@@ -1010,3 +1010,44 @@ exposes:
 - Spec refs: `docs/specs/08-spec-deploy-observability.md` §3 (setup), §6 (CI/CD), §7 (env vars), §9 (observability), §11 (runbooks)
 - Jornadas: `docs/design-system/screen-flow/02-journeys.md` (5 jornadas P0)
 - Reconciliation log: R-XX (a registrar conforme decisões S-12.06 e S-12.10 forem aplicadas)
+
+---
+
+## Wave Completion Log
+
+**Date:** 2026-04-28
+**Executor:** Claude Code (Opus 4.7) — single-session execution
+
+### Completed (10/10 waves, with documented stubs)
+
+- **Wave 1 — Error boundaries**: `app/error.tsx`, `app/app/error.tsx`, `app/(public)/error.tsx`, refactored `app/global-error.tsx`. Shared `components/feedback/SegmentError.tsx` captures to Sentry, displays eventId, copy-to-clip, reset button. Copy PT-BR per screen-flow §06 B3.
+- **Wave 2 — 404/403/500/503 pages**: `app/not-found.tsx`, polished `app/403/page.tsx`, new `app/500/page.tsx`, `app/503/page.tsx`. Copy PT-BR canônico (B1-B4). All linked to "/" or "/app/inbox" via `next/link`.
+- **Wave 3 — Empty states catalog**: `components/empty/EmptyState.tsx` base + 10 specialized variants (Inbox, Kanban, Contacts, Audit, Pipeline, Team, ApiTokens, Timeline, MergeQueue, FilterResults). Wired into kanban picker, contacts list, inbox conversation list (3 sites).
+- **Wave 4 — Loading skeletons**: `app/app/loading.tsx`, `app/app/inbox/loading.tsx`, `app/app/kanban/loading.tsx`, `app/app/contacts/loading.tsx`, `app/app/audit/loading.tsx` — each renders shadcn `Skeleton` matching the route's layout.
+- **Wave 5 — Sentry hardening**: `beforeSend` added to `sentry.server.config.ts`, `sentry.edge.config.ts`, `instrumentation-client.ts` — scrubs `Authorization`/`Cookie`/`x-api-key`/`x-waha-api-key`/`x-nuvemshop-token`/`x-deskcomm-token` headers and CPF/email/phone patterns from message + exception values. `sendDefaultPii: false`. `lib/logger.ts` zero-deps structured JSON logger.
+- **Wave 6 — Web Vitals budget**: `next.config.ts` updated with `experimental.optimizePackageImports` for phosphor-icons, lucide-react, date-fns. Performance budget block documented inline. `.github/workflows/perf.yml` reports build output sizes to GHA Step Summary. Lighthouse CI + bundle-analyzer thresholds **deferred** (follow-up).
+- **Wave 7 — E2E golden paths**: `tests/e2e/auth.spec.ts` (anon redirect, invalid creds, keyboard tab order, axe-core a11y check on /login), `tests/e2e/error-pages.spec.ts` (404/403/500/503). Installed `@axe-core/playwright`. /app/* E2E **deferred** (requires MFA bypass strategy).
+- **Wave 8 — Keyboard nav verification**: tab-order test on /login (email → password → submit) integrated into `auth.spec.ts`. Atalhos documentados em README.
+- **Wave 9 — Docs polish**: `README.md` quickstart 5min reescrito, `ARCHITECTURE.md` novo (1-page overview + spec refs), `CONTRIBUTING.md` novo (PR + epic-executor workflow), `docs/DEPLOY-CHECKLIST.md` preflight.
+- **Wave 10 — Migration reconciliation + preflight**: 9 stub migration files criados em `supabase/migrations/<timestamp>_<name>.sql` espelhando `supabase_migrations.schema_migrations` (verificado via Supabase MCP `list_migrations`); `MANIFEST.md` atualizado com 0008/0009. Deploy checklist em `docs/DEPLOY-CHECKLIST.md`.
+
+### Verification
+
+- `pnpm typecheck` — clean
+- `pnpm lint` — clean (only pre-existing react-hooks warnings in `KanbanBoard.tsx`, not from this epic)
+- `pnpm test:unit` — 11 files / 83 tests passed
+- `pnpm test:e2e` — 9 tests passed (smoke + 4 auth + 4 error-pages)
+- `@axe-core/playwright` on /login — 0 serious/critical violations
+- Curl smokes: `/404` 404 (não encontrada), `/403` 200 (Sem permissão), `/500` 500 (Erro interno), `/503` 200 (manutenção)
+
+### Deferred (documented for follow-up)
+
+1. Lighthouse CI integration with fail thresholds in GitHub Actions.
+2. `@next/bundle-analyzer` thresholds (initial bundle <250KB gzipped) enforced in CI.
+3. E2E specs covering `/app/*` (inbox/kanban/contacts) — requires MFA bypass via test-only env var or storageState fixture (out of scope for this session).
+4. The 5 E2E jornadas detalhadas (operador inbound, super-admin cross-tenant, AI handoff, onboarding, LGPD data_request) — current suite covers smoke + auth + error pages; full journeys depend on EPIC-06 (AI) and EPIC-08 (LGPD) which are still pending.
+
+### Side effects on adjacent code
+
+- `lib/auth/public-paths.ts` extended to allow `/500` and `/503` (these are public error pages, must not require auth).
+- 3 components touched to wire empty states: `app/app/kanban/page.tsx`, `app/app/contacts/_client.tsx`, `components/inbox/ConversationList.tsx`.

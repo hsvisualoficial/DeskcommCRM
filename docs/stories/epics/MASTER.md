@@ -41,7 +41,7 @@ estimated_calendar: 8-12 semanas
 | 9 | EPIC-09 | Team & Permissions | 7 | 19 | P0 | ✅ completed (env-empty-ready) | `EPIC-09-team.md` |
 | 10 | EPIC-10 | Audit & Settings | 9 | 26 | P0 | ✅ completed (partial: notification_prefs stubbed; sessions/storage/email change deferred) | `EPIC-10-audit-settings.md` |
 | 11 | EPIC-11 | Super-Admin Platform | 14 | 48 | P0 | pending (Phase 3 gated) | `EPIC-11-admin-platform.md` |
-| 12 | EPIC-12 | Hardening + E2E + Polish | 10 | 31 | P0 | pending | `EPIC-12-hardening.md` |
+| 12 | EPIC-12 | Hardening + E2E + Polish | 10 | 31 | P0 | ✅ completed (partial: Lighthouse CI + bundle-analyzer + /app/* E2E deferred) | `EPIC-12-hardening.md` |
 
 **Totais**: 13 epics · 133 stories · ~430 points
 
