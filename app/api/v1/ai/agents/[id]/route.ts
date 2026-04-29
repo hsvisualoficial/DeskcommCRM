@@ -66,7 +66,7 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
     return fail("not_found", "Agent não encontrado.", 404, { requestId });
   }
 
-  return ok({ data }, { requestId });
+  return ok(data, { requestId });
 }
 
 // ---------------------------------------------------------------------------
@@ -146,7 +146,7 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx): Promise<Response> 
   }
 
   if (Object.keys(update).length === 0) {
-    return ok({ data: existing }, { requestId });
+    return ok(existing, { requestId });
   }
 
   const { data: updated, error: updErr } = await admin
@@ -161,7 +161,7 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx): Promise<Response> 
     return fail("internal_error", "Erro ao atualizar agent.", 500, { requestId });
   }
 
-  return ok({ data: updated }, { requestId });
+  return ok(updated, { requestId });
 }
 
 // ---------------------------------------------------------------------------
@@ -221,5 +221,5 @@ export async function DELETE(_req: NextRequest, ctx: RouteCtx): Promise<Response
     return fail("internal_error", "Erro ao desativar agent.", 500, { requestId });
   }
 
-  return ok({ data: { id, is_active: false } }, { requestId });
+  return ok({ id, is_active: false }, { requestId });
 }

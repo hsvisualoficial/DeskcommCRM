@@ -52,7 +52,7 @@ export async function GET(_req: NextRequest): Promise<Response> {
     return fail("internal_error", "Erro ao listar agents.", 500, { requestId });
   }
 
-  return ok({ data: data ?? [] }, { requestId });
+  return ok(data ?? [], { requestId });
 }
 
 // ---------------------------------------------------------------------------
@@ -114,5 +114,5 @@ export async function POST(req: NextRequest): Promise<Response> {
     return fail("internal_error", "Erro ao criar agent.", 500, { requestId });
   }
 
-  return ok({ data }, { status: 201, requestId });
+  return ok(data, { status: 201, requestId });
 }
