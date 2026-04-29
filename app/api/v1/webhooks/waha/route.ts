@@ -54,6 +54,29 @@ interface WahaPayload {
   timestamp?: number;
   mediaUrl?: string;
   mimetype?: string;
+  _data?: {
+    notifyName?: string;
+    pushName?: string;
+  } & Record<string, unknown>;
+}
+
+/**
+ * Resolve um chatId WAHA ({number}@c.us | {lid}@lid | @g.us) em:
+ * - phone E.164 ("+5531...") quando @c.us (number known)
+ * - null phone + lid identifier quando @lid (number protected)
+ * - null+null quando @g.us (group, skip)
+ */
+function parseChatId(chatId: string): { kind: "phone" | "lid" | "group"; phone: string | null; lid: string | null } {
+  if (chatId.endsWith("@g.us")) return { kind: "group", phone: null, lid: null };
+  if (chatId.endsWith("@lid")) {
+    return { kind: "lid", phone: null, lid: chatId };
+  }
+  if (chatId.endsWith("@c.us") || chatId.endsWith("@s.whatsapp.net")) {
+    const digits = chatId.replace(/@.*$/, "").replace(/^\+/, "");
+    return { kind: "phone", phone: "+" + digits, lid: null };
+  }
+  // unknown shape — treat as group/skip
+  return { kind: "group", phone: null, lid: null };
 }
 
 const STOP_RX = /\b(STOP|PARAR|SAIR|UNSUBSCRIBE)\b/i;
@@ -200,38 +223,58 @@ async function handleInbound(
   requestId: string,
 ): Promise<void> {
   const chatId = p.from ?? "";
-  if (chatId.endsWith("@g.us")) return;
-  // WhatsApp Multi-device usa @lid (Linked Identity) como pseudonymous ID
-  // pra preservar privacidade. Não é phone E.164. Sem WAHA contact-resolve
-  // (que requer chamada extra), não conseguimos criar um contato útil.
-  // Skip por enquanto — quando a pessoa responder no @c.us regular, criamos.
-  if (chatId.endsWith("@lid")) return;
+  const parsed = parseChatId(chatId);
+  if (parsed.kind === "group") return;
   if (!p.id || !chatId) return;
-  // Skip eventos sem conteúdo (WAHA emite muitos message events vazios pra
-  // status updates, leituras, etc). Inbound real tem body OU media.
+  // Skip events sem conteúdo (WAHA emite eventos vazios pra status updates,
+  // read receipts, presence — esses não viram mensagens).
   if (!p.body && !p.mediaUrl && !p.hasMedia) return;
 
-  const phone = "+" + chatId.replace(/@.*$/, "").replace(/^\+/, "");
+  const notifyName = p._data?.notifyName ?? p._data?.pushName ?? null;
 
+  // Idempotent contact upsert. Match strategy depends on identifier kind:
+  //  - phone (@c.us): match by phone_number (E.164)
+  //  - lid (@lid): match by source_metadata->>'waha_lid'
   let contactId: string | null = null;
-  const { data: existingContact } = await admin
-    .from("contacts")
-    .select("id, is_blocked")
-    .eq("organization_id", session.organization_id)
-    .eq("phone_number", phone)
-    .maybeSingle();
+  let existingContact: { id: string; is_blocked: boolean } | null = null;
+
+  if (parsed.kind === "phone") {
+    const { data } = await admin
+      .from("contacts")
+      .select("id, is_blocked")
+      .eq("organization_id", session.organization_id)
+      .eq("phone_number", parsed.phone)
+      .maybeSingle();
+    existingContact = data ?? null;
+  } else {
+    const { data } = await admin
+      .from("contacts")
+      .select("id, is_blocked")
+      .eq("organization_id", session.organization_id)
+      .eq("source_metadata->>waha_lid", parsed.lid)
+      .maybeSingle();
+    existingContact = data ?? null;
+  }
 
   if (existingContact) {
     contactId = existingContact.id;
   } else {
+    const insertRow: Record<string, unknown> = {
+      organization_id: session.organization_id,
+      source: "whatsapp",
+      consent: {},
+      tags: [],
+      source_metadata:
+        parsed.kind === "lid"
+          ? { waha_lid: parsed.lid, notify_name: notifyName }
+          : { waha_chat_id: chatId, notify_name: notifyName },
+    };
+    if (parsed.kind === "phone") insertRow.phone_number = parsed.phone;
+    if (notifyName) insertRow.display_name = notifyName;
+
     const { data: createdContact, error: contactErr } = await admin
       .from("contacts")
-      .insert({
-        organization_id: session.organization_id,
-        phone_number: phone,
-        source: "whatsapp",
-        consent: {},
-      })
+      .insert(insertRow)
       .select("id")
       .single();
     if (contactErr || !createdContact) {
@@ -347,28 +390,69 @@ async function handleOutboundFromUserPhone(
   p: WahaPayload,
   requestId: string,
 ): Promise<void> {
-  // For outbound (fromMe=true), recipient is in `to`. WAHA Multi-device
-  // returns destinatário com `@lid` quando o destinatário ainda não está
-  // nos contatos do remetente — sem phone E.164, não conseguimos linkar
-  // a um contact válido. Skip por enquanto (mensagem ainda é registrada
-  // no webhook_events_log pra replay futuro quando resolvermos LID→phone).
+  // For outbound (fromMe=true), recipient is in `to`.
   const chatId = p.to ?? "";
-  if (!chatId || chatId.endsWith("@g.us") || chatId.endsWith("@lid")) return;
-  if (!p.id) return;
+  const parsed = parseChatId(chatId);
+  if (parsed.kind === "group") return;
+  if (!p.id || !chatId) return;
   if (!p.body && !p.mediaUrl && !p.hasMedia) return;
 
-  const phone = "+" + chatId.replace(/@.*$/, "").replace(/^\+/, "");
+  // Resolve recipient contact (auto-create if missing — pode ser um número
+  // pra quem o operador respondeu do celular sem ter passado pelo CRM).
+  let contactId: string | null = null;
+  let existingContact: { id: string } | null = null;
 
-  // Resolve contact by phone (don't auto-create — outbound to non-contact
-  // is unusual; ignore if missing).
-  const { data: contact } = await admin
-    .from("contacts")
-    .select("id")
-    .eq("organization_id", session.organization_id)
-    .eq("phone_number", phone)
-    .maybeSingle();
+  if (parsed.kind === "phone") {
+    const { data } = await admin
+      .from("contacts")
+      .select("id")
+      .eq("organization_id", session.organization_id)
+      .eq("phone_number", parsed.phone)
+      .maybeSingle();
+    existingContact = data ?? null;
+  } else {
+    const { data } = await admin
+      .from("contacts")
+      .select("id")
+      .eq("organization_id", session.organization_id)
+      .eq("source_metadata->>waha_lid", parsed.lid)
+      .maybeSingle();
+    existingContact = data ?? null;
+  }
 
-  if (!contact) return;
+  if (existingContact) {
+    contactId = existingContact.id;
+  } else {
+    // Outbound from user phone — display_name fallback é o phone (se @c.us)
+    // ou "Contato {LID curto}" pra @lid sem display name (vai ser editavel).
+    const fallbackName =
+      parsed.kind === "phone"
+        ? parsed.phone
+        : `Contato ${(parsed.lid ?? "").replace(/@.*$/, "").slice(-6)}`;
+    const insertRow: Record<string, unknown> = {
+      organization_id: session.organization_id,
+      source: "whatsapp",
+      consent: {},
+      tags: [],
+      display_name: fallbackName,
+      source_metadata:
+        parsed.kind === "lid" ? { waha_lid: parsed.lid } : { waha_chat_id: chatId },
+    };
+    if (parsed.kind === "phone") insertRow.phone_number = parsed.phone;
+
+    const { data: created, error: contactErr } = await admin
+      .from("contacts")
+      .insert(insertRow)
+      .select("id")
+      .single();
+    if (contactErr || !created) {
+      console.error("[waha.webhook] outbound contact create failed", contactErr?.message);
+      return;
+    }
+    contactId = created.id;
+  }
+  // Build a tiny shim so the rest of the function reads the same shape as inbound.
+  const contact = { id: contactId };
 
   const { data: conv } = await admin
     .from("conversations")
