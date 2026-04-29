@@ -78,4 +78,5 @@ export type AuditAction =
   | "platform_admin.inbox_listed"
   | "platform_admin.conversation_viewed"
   | "platform_admin.tenants_listed"
+  | "platform_admin.tenant_viewed"
   | "tenant.created_by_platform_admin";
