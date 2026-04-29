@@ -92,4 +92,5 @@ export type AuditAction =
   | "platform_admin.lgpd_request_viewed"
   | "platform_admin.incidents_listed"
   | "platform_admin.incident_viewed"
-  | "incident.resolved";
+  | "incident.resolved"
+  | "platform_admin.usage_viewed";
