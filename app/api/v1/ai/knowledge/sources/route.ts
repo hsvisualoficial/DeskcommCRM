@@ -67,7 +67,7 @@ export async function GET(_req: NextRequest): Promise<Response> {
   const { data, error } = await supabase
     .from("ai_knowledge_sources")
     .select(
-      "id, agent_id, source_type, name, status, source_metadata, ingested_at, created_at, updated_at",
+      "id, agent_id, organization_id, source_type, name, status, last_index_status, last_index_error, last_indexed_at, chunks_count, is_active, source_metadata, ingested_at, created_at, updated_at",
     )
     .eq("organization_id", activeOrg.orgId)
     .order("created_at", { ascending: false });

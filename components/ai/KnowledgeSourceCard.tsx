@@ -3,7 +3,7 @@ import { HelpCircle, ShieldCheck, MessageSquare, Package, RefreshCw } from "luci
 import { toast } from "sonner";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { SourceStatusBadge } from "@/components/ai/SourceStatusBadge";
+import { SourceStatusBadge, deriveBadgeStatus } from "@/components/ai/SourceStatusBadge";
 import type { SourceRow } from "@/hooks/ai/useKnowledgeSources";
 
 export type KnowledgeSourceType = "faq" | "policy" | "conversations" | "catalog";
@@ -88,9 +88,9 @@ export function KnowledgeSourceCard({ source, type, onReindex, isReindexing }: P
     );
   }
 
-  const status = source.last_index_status;
-  const reindexBlocked = status === "pending" || status === "indexing" || isReindexing;
-  const showError = status === "failed" && source.last_index_error;
+  const derived = deriveBadgeStatus(source);
+  const reindexBlocked = derived === "archived" || isReindexing;
+  const showError = derived === "failed" && source.last_index_error;
 
   const extraButton = (() => {
     if (type === "faq") {
@@ -126,7 +126,7 @@ export function KnowledgeSourceCard({ source, type, onReindex, isReindexing }: P
             <Icon className="h-5 w-5 text-accent" aria-hidden />
             <CardTitle className="text-base">{source.name || meta.label}</CardTitle>
           </div>
-          <SourceStatusBadge status={status} />
+          <SourceStatusBadge source={source} />
         </div>
         <p className="text-sm text-text-muted">{meta.description}</p>
       </CardHeader>
@@ -154,7 +154,7 @@ export function KnowledgeSourceCard({ source, type, onReindex, isReindexing }: P
           onClick={onReindex}
         >
           <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isReindexing ? "animate-spin" : ""}`} aria-hidden />
-          Re-indexar
+          {isReindexing ? "Reindexando..." : "Re-indexar"}
         </Button>
         {extraButton}
       </CardFooter>

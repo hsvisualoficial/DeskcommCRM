@@ -1,8 +1,11 @@
 /**
  * POST /api/v1/ai/knowledge/sources/:id/reindex
  *
- * Marca uma knowledge source como `pending` (otimista) e emite o evento
- * `knowledge_source.updated` para o worker re-processar a fonte.
+ * Emite `knowledge_source.updated` para o worker re-processar a fonte.
+ * Não persiste estado transitório — o schema só aceita
+ * `last_index_status IN (NULL, 'failed', 'partial')`. O "queued" é puramente
+ * client-side via mutation.isPending; o worker eventualmente atualiza
+ * `last_indexed_at` / `chunks_count` / `last_index_status`.
  *
  * Auth: cookie session, role >= manager.
  * organization_id é resolvido do JWT — nunca do body/path.
@@ -87,15 +90,16 @@ export async function POST(
 
   const admin = createAdminClient();
 
-  const { error: updateErr } = await admin
+  // Limpa apenas o erro anterior — `last_index_status` não tem estado
+  // legítimo para "pending", então NÃO escrevemos nele.
+  const { error: clearErr } = await admin
     .from("ai_knowledge_sources")
-    .update({ last_index_status: "pending", last_index_error: null })
+    .update({ last_index_error: null })
     .eq("id", id)
     .eq("organization_id", activeOrg.orgId);
 
-  if (updateErr) {
-    console.error("[ai-knowledge-reindex] update failed:", updateErr.message);
-    return fail("internal_error", "Erro ao marcar fonte para re-indexação.", 500, { requestId });
+  if (clearErr) {
+    console.warn("[ai-knowledge-reindex] clear last_index_error failed (non-blocking):", clearErr.message);
   }
 
   // Emit knowledge_source.updated (fire-and-forget).
@@ -116,5 +120,5 @@ export async function POST(
     console.warn("[ai-knowledge-reindex] emit_event failed (non-blocking):", emitErr.message);
   }
 
-  return ok({ id, last_index_status: "pending" as const }, { requestId });
+  return ok({ id, queued: true as const, agent_id: ksRow.agent_id }, { requestId });
 }

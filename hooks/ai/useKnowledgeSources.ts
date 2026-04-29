@@ -1,5 +1,6 @@
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { apiClient } from "@/lib/api/client";
 import { showApiError } from "@/components/feedback/ApiErrorToast";
 
@@ -9,7 +10,8 @@ export interface SourceRow {
   organization_id: string;
   source_type: string;
   name?: string | null;
-  last_index_status: string | null;
+  status: "ready" | "archived" | "failed" | string | null;
+  last_index_status: "failed" | "partial" | null;
   last_index_error: string | null;
   last_indexed_at: string | null;
   chunks_count: number;
@@ -24,7 +26,7 @@ interface ListResponse {
 }
 
 interface ReindexResponse {
-  data: { id: string; last_index_status: string };
+  data: { id: string; queued: true; agent_id: string };
 }
 
 export const sourcesQueryKey = (agentId: string) =>
@@ -61,23 +63,10 @@ export function useReindexSource(agentId: string) {
       );
       return res.data;
     },
-    onMutate: async (id: string) => {
-      await qc.cancelQueries({ queryKey: sourcesQueryKey(agentId) });
-      const previous = qc.getQueryData<SourceRow[]>(sourcesQueryKey(agentId));
-      if (previous) {
-        const optimistic = previous.map((s) =>
-          s.id === id
-            ? { ...s, last_index_status: "pending", last_index_error: null }
-            : s,
-        );
-        qc.setQueryData(sourcesQueryKey(agentId), optimistic);
-      }
-      return { previous };
+    onSuccess: () => {
+      toast.success("Reindexação enfileirada — atualizando em segundo plano.");
     },
-    onError: (err, _id, context) => {
-      if (context?.previous) {
-        qc.setQueryData(sourcesQueryKey(agentId), context.previous);
-      }
+    onError: (err) => {
       showApiError(err);
     },
     onSettled: () => {
