@@ -10,8 +10,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // typedRoutes moved out of experimental in Next 15.5+
+  typedRoutes: true,
   experimental: {
-    typedRoutes: true,
     optimizePackageImports: ["@phosphor-icons/react", "lucide-react", "date-fns"],
   },
   images: {

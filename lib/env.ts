@@ -48,10 +48,20 @@ const schema = z.object({
   UPSTASH_REDIS_REST_URL: required("UPSTASH_REDIS_REST_URL"),
   UPSTASH_REDIS_REST_TOKEN: required("UPSTASH_REDIS_REST_TOKEN"),
 
-  // AI providers
+  // AI providers — env-gated. Worker no-ops with skip="ai_gateway_key_missing"
+  // when AI_GATEWAY_API_KEY is absent, so production boot must not be fatal.
+  AI_GATEWAY_API_KEY: z.string().optional().default(""),
+  AI_GATEWAY_BASE_URL: z.string().optional().default(""),
   VERCEL_AI_GATEWAY_URL: z.string().optional().default(""),
-  ANTHROPIC_API_KEY: required("ANTHROPIC_API_KEY"),
-  OPENAI_API_KEY: required("OPENAI_API_KEY"),
+  ANTHROPIC_API_KEY: z.string().optional().default(""),
+  OPENAI_API_KEY: z.string().optional().default(""),
+
+  // Workers — opt-in via env so dev doesn't run loops. Production cron sets it.
+  EVENT_LOG_WORKER_ENABLED: z
+    .enum(["true", "false"])
+    .optional()
+    .default("false")
+    .transform((v) => v === "true"),
 
   // Sentry
   SENTRY_DSN: z.string().optional().default(""),
@@ -84,5 +94,18 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+// Soft warning for env-gated AI keys (worker degrades gracefully but operators
+// should know when the bot is silent for config reasons).
+if (!env.AI_GATEWAY_API_KEY && !env.ANTHROPIC_API_KEY) {
+  console.warn(
+    "[env] No AI_GATEWAY_API_KEY or ANTHROPIC_API_KEY set — ai-response-worker will skip with reason='ai_gateway_key_missing'.",
+  );
+}
+if (!env.OPENAI_API_KEY) {
+  console.warn(
+    "[env] No OPENAI_API_KEY set — RAG embedding will be unavailable; bot answers without retrieved context.",
+  );
+}
 
 export type Env = typeof env;

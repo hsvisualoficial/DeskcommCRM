@@ -7,8 +7,10 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --turbopack",
+    "dev:webpack": "next dev",
+    "build": "next build --turbopack",
+    "build:webpack": "next build",
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,css}\"",

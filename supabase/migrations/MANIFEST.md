@@ -15,6 +15,7 @@ Migrations applied to Supabase project `rrydmwnporysaiysiztn` (sa-east-1, Postgr
 | `20260428200331` | `0007_security_hardening` | search_path=public set on all functions, ai_pricing public-read policy, revoke EXECUTE anon on internal helpers, tighten api_audit_log INSERT policy |
 | `20260429013958` | `0008_tenant_onboarding_state` | onboarding state machine columns + transitions on organizations |
 | `20260429021857` | `0009_expand_messaging_constraints` | extra check constraints + indexes on conversations/messages for inbox perf |
+| `20260429032132` | `0010_ai_rag_handoff_columns_and_rpcs` | EPIC-06 wave 1: contacts.force_human + conversations.bot_silenced_until/last_handoff_at + RPC retrieve_top_k_chunks (security definer + programmatic org filter) + RPC activate_kb_version + ai_pricing seed corrections (haiku 100/500, embedding-3-small 20) |
 
 ## Reproducibility
 
