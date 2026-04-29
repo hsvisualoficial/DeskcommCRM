@@ -72,12 +72,12 @@ export async function PATCH(req: NextRequest): Promise<Response> {
   try {
     body = await req.json();
   } catch {
-    return fail("validation_error", "JSON inválido.", 422, { requestId });
+    return fail("validation_failed", "JSON inválido.", 422, { requestId });
   }
 
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
-    return fail("validation_error", "Payload inválido.", 422, {
+    return fail("validation_failed", "Payload inválido.", 422, {
       requestId,
       details: parsed.error.flatten(),
     });
