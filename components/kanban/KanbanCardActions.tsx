@@ -7,17 +7,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { DotsThree } from "@/lib/ui/icons";
+import { DotsThree, PencilSimple } from "@/lib/ui/icons";
 import { useWinLead } from "@/hooks/kanban/useUpdateLead";
 import { LoseLeadDialog } from "./LoseLeadDialog";
+import { EditLeadDialog } from "./EditLeadDialog";
+import type { Lead } from "@/lib/types/leads";
 
 interface KanbanCardActionsProps {
-  leadId: string;
+  lead: Lead;
   pipelineId: string;
 }
 
-export function KanbanCardActions({ leadId, pipelineId }: KanbanCardActionsProps) {
+export function KanbanCardActions({ lead, pipelineId }: KanbanCardActionsProps) {
   const [loseOpen, setLoseOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const winMutation = useWinLead(pipelineId);
 
   return (
@@ -39,9 +42,16 @@ export function KanbanCardActions({ leadId, pipelineId }: KanbanCardActionsProps
           onClick={(e) => e.stopPropagation()}
         >
           <DropdownMenuItem
+            onSelect={() => {
+              setEditOpen(true);
+            }}
+          >
+            <PencilSimple size={14} className="mr-2" /> Editar
+          </DropdownMenuItem>
+          <DropdownMenuItem
             disabled={winMutation.isPending}
             onSelect={() => {
-              winMutation.mutate({ leadId });
+              winMutation.mutate({ leadId: lead.id });
             }}
           >
             Marcar como ganho
@@ -53,14 +63,19 @@ export function KanbanCardActions({ leadId, pipelineId }: KanbanCardActionsProps
           >
             Marcar como perdido
           </DropdownMenuItem>
-          <DropdownMenuItem disabled>Editar</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
       <LoseLeadDialog
         open={loseOpen}
         onOpenChange={setLoseOpen}
-        leadId={leadId}
+        leadId={lead.id}
+        pipelineId={pipelineId}
+      />
+      <EditLeadDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        lead={lead}
         pipelineId={pipelineId}
       />
     </>

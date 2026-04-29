@@ -67,7 +67,7 @@ export function KanbanCard({
             <h3 className="line-clamp-2 text-sm font-medium leading-snug text-text">
               {lead.title}
             </h3>
-            <KanbanCardActions leadId={lead.id} pipelineId={pipelineId} />
+            <KanbanCardActions lead={lead} pipelineId={pipelineId} />
           </div>
 
           {value && (

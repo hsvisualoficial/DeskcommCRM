@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
 import { showApiError } from "@/components/feedback/ApiErrorToast";
 import type { Lead } from "@/lib/types/leads";
+import type { UpdateLeadInput } from "@/lib/schemas/leads";
 
 interface WinArgs {
   leadId: string;
@@ -29,6 +30,21 @@ export function useLoseLead(pipelineId: string) {
       apiClient.post<{ data: Lead }>(`/api/v1/leads/${leadId}/lose`, {
         lost_reason: lostReason,
       }),
+    onError: showApiError,
+    onSettled: () => qc.invalidateQueries({ queryKey: ["board", pipelineId] }),
+  });
+}
+
+interface EditArgs {
+  leadId: string;
+  patch: UpdateLeadInput;
+}
+
+export function useEditLead(pipelineId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ leadId, patch }: EditArgs) =>
+      apiClient.patch<{ data: Lead }>(`/api/v1/leads/${leadId}`, patch),
     onError: showApiError,
     onSettled: () => qc.invalidateQueries({ queryKey: ["board", pipelineId] }),
   });

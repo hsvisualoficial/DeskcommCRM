@@ -21,6 +21,9 @@ function formatError(err: unknown): string {
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { FilterBar } from "@/components/kanban/FilterBar";
 import { BulkActionBar } from "@/components/kanban/BulkActionBar";
+import { NewLeadDialog } from "@/components/kanban/NewLeadDialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "@/lib/ui/icons";
 import type { LeadFilters } from "@/lib/kanban/filters";
 import { applyFilters } from "@/lib/kanban/filters";
 
@@ -34,6 +37,7 @@ export function PipelinePageClient({
   const { data, isLoading, error } = useBoard(pipelineId);
   const [filters, setFilters] = useState<LeadFilters>({ status: "all" });
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [newOpen, setNewOpen] = useState(false);
 
   const filteredLeads = data ? applyFilters(data.leads, filters) : [];
 
@@ -43,7 +47,18 @@ export function PipelinePageClient({
         <h1 className="text-2xl font-semibold tracking-tight">
           {data?.pipeline.name ?? initialName}
         </h1>
+        <Button onClick={() => setNewOpen(true)} disabled={!data}>
+          <Plus size={16} className="mr-2" /> Novo Lead
+        </Button>
       </header>
+      {data && (
+        <NewLeadDialog
+          open={newOpen}
+          onOpenChange={setNewOpen}
+          pipelineId={pipelineId}
+          stages={data.stages}
+        />
+      )}
       <FilterBar filters={filters} onChange={setFilters} leads={data?.leads ?? []} />
       {error ? (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm">

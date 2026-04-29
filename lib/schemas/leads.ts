@@ -9,10 +9,20 @@
  */
 import { z } from "zod";
 
+/**
+ * Accept either ISO 8601 (e.g. "2026-04-29T03:15:54.000Z") or Postgres-style
+ * timestamptz (e.g. "2026-04-29 03:15:54.123456+00") since Supabase returns
+ * the latter and the client passes it through. Both parse to the same Date.
+ */
+const flexibleTimestamp = z
+  .string()
+  .min(10)
+  .refine((s) => !Number.isNaN(Date.parse(s)), "expected_updated_at deve ser um timestamp válido");
+
 export const moveLeadSchema = z.object({
   stage_id: z.string().uuid(),
   position_in_stage: z.number().finite(),
-  expected_updated_at: z.string().datetime(),
+  expected_updated_at: flexibleTimestamp,
 });
 export type MoveLeadInput = z.infer<typeof moveLeadSchema>;
 
@@ -44,6 +54,49 @@ export const loseLeadSchema = z.object({
   lost_reason: z.string().min(1, "lost_reason é obrigatório").max(500),
 });
 export type LoseLeadInput = z.infer<typeof loseLeadSchema>;
+
+/**
+ * createLeadSchema → POST /api/v1/leads
+ * Status, source_metadata, custom_fields, position_in_stage are server-managed.
+ */
+export const createLeadSchema = z.object({
+  pipeline_id: z.string().uuid(),
+  stage_id: z.string().uuid(),
+  title: z.string().min(2).max(200),
+  description: z.string().max(2000).nullable().optional(),
+  contact_id: z.string().uuid().nullable().optional(),
+  value_cents: z.coerce.number().int().nonnegative().nullable().optional(),
+  currency: z.string().length(3).default("BRL"),
+  owner_user_id: z.string().uuid().nullable().optional(),
+  expected_close_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .optional(),
+  tags: z.array(z.string()).default([]),
+  source: z.string().min(1).default("manual"),
+});
+export type CreateLeadInput = z.infer<typeof createLeadSchema>;
+
+/**
+ * updateLeadSchema → PATCH /api/v1/leads/[id]
+ * Stage/pipeline transitions go through /move /win /lose endpoints.
+ */
+export const updateLeadSchema = z.object({
+  title: z.string().min(2).max(200).optional(),
+  description: z.string().max(2000).nullable().optional(),
+  contact_id: z.string().uuid().nullable().optional(),
+  value_cents: z.coerce.number().int().nonnegative().nullable().optional(),
+  currency: z.string().length(3).optional(),
+  owner_user_id: z.string().uuid().nullable().optional(),
+  expected_close_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .optional(),
+  tags: z.array(z.string()).optional(),
+});
+export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
 
 export const bulkLeadActionSchema = z.discriminatedUnion("action", [
   z.object({
