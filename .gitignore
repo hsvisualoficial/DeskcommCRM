@@ -56,3 +56,4 @@ supabase/.branches/
 
 # Sentry Config File
 .env.sentry-build-plugin
+inbox-with-real-msgs.png
