@@ -14,7 +14,7 @@ exposes_contracts:
   - "ui.ThemeToggle — componente wired ao theme provider, atalho `Cmd+Shift+L`"
   - "infra.test-runner — Playwright configurado com smoke `/` 200 + Vitest configurado com unit `cn()`"
   - "lib.schemas — registry `lib/schemas/index.ts` + helper `validateRequest<T>(schema, request)`"
-status: pending
+status: completed
 created_at: 2026-04-28
 owner: Rafael Melgaço
 ---
@@ -1103,3 +1103,23 @@ Ao terminar EPIC-00, a regression suite deve cobrir:
 - CLAUDE.md refs: "Convenções críticas", "Testes", "Definition of Done"
 - Reconciliation log: n/a (epic 0 introduz convenções, não reconcilia)
 - Master Plan refs: §6 "Após EPIC-00" (lista de contracts esperados — esta spec implementa todos)
+
+---
+
+## ✅ Wave Completion Log
+
+Concluído em 2026-04-28 (sessão 1).
+
+| Wave | Story | Commit |
+|------|-------|--------|
+| 1 | S-00.01 TanStack Query provider | `9682515` |
+| 2 | S-00.02 Phosphor icons (Tray as Inbox) | `4730f6d` + `e5d9be6` |
+| 3 | S-00.03 HTTP client wrapper | `fdda8fe` |
+| 4 | S-00.04 useRealtimeChannel | `076fe24` |
+| 5 | S-00.05 Toast + ApiErrorToast | `567ec67` |
+| 6 | S-00.06 ThemeToggle + Cmd+Shift+L | `79703a1` |
+| 7 | S-00.07 Playwright + Vitest infra | `7590568` |
+| 8 | S-00.08 Schemas registry + validateRequest | `da9db6c` |
+
+22 unit tests + 1 e2e smoke. Pre-existing typecheck errors fixed (`80f3eaf`).
+Phosphor v2 não exporta `Inbox` → aliased pra `Tray` em `lib/ui/icons.ts`.

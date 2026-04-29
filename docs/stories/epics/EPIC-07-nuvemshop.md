@@ -32,7 +32,7 @@ exposes_contracts:
   - "db.nuvemshop_products"
   - "db.sync_progress"
   - "route./app/integrations/nuvemshop"
-status: pending
+status: completed
 created_at: 2026-04-28
 owner: Rafael Melgaço
 ---
@@ -1231,3 +1231,39 @@ exposes:
 - Specs cruzadas: 02 (resolveContact), 04 (pipeline Pedidos + leads + activities), 09 §11 (Server Actions catalog inclui `connectNuvemshop`)
 - Screen flow: `/app/integrations/nuvemshop` (a inventariar em screen-inventory)
 - EPIC seguinte: EPIC-08 LGPD reusa `processWebhook`, `NuvemshopAdapter`, `tenant_integrations`, `webhook_events_log` pra implementar os 3 receivers LGPD
+
+---
+
+## ✅ Wave Completion Log (env-empty-ready)
+
+Concluído em 2026-04-28 (sessão 2). Construído via Web Fetch da doc oficial Nuvemshop.
+
+**IMPORTANT**: `NUVEMSHOP_APP_ID`/`CLIENT_ID`/`CLIENT_SECRET` ficam vazios em `.env.local`. Código degrada gracioso com `{ ok: false, error: 'not_configured' }`. Quando você registrar app em https://partners.tiendanube.com/ e dropar as keys, OAuth + webhooks ativam direto.
+
+| Story | Commit |
+|-------|--------|
+| OAuth flow (authorize URL, exchange, HMAC state CSRF) | `b98ce6b` |
+| 8 webhook receivers (catch-all dynamic route) | `b98ce6b` |
+| API client com Authentication: bearer header | `b98ce6b` |
+| Integration UI page (status: not_configured / not_connected / connected) | `b98ce6b` |
+| connectNuvemshop + disconnectNuvemshop Server Actions | `b98ce6b` |
+| webhook HMAC verification (timingSafeEqual sobre Buffers) | `b98ce6b` |
+| Idempotency via webhook_events_log + emit_event | `b98ce6b` |
+
+### 8 webhook events configurados
+order/created, order/updated, order/paid, order/cancelled, product/created, product/updated, product/deleted, app/uninstalled
+
+LGPD redact webhooks (store/redact, customers/redact, customers/data_request) **deferred pra EPIC-08**.
+
+### Architecture contracts emitted
+- `api.GET /api/v1/integrations/nuvemshop/callback` (OAuth callback)
+- `api.POST /api/v1/webhooks/nuvemshop/{event}` (catch-all dynamic)
+- `action.connectNuvemshop` / `action.disconnectNuvemshop` Server Actions
+- `route./app/integrations/nuvemshop` (status UI)
+- `lib/nuvemshop/{config,oauth,api-client,state}` exports
+- `tenant_integrations` row com `provider='nuvemshop'`, `oauth_access_token_encrypted` (via fn_encrypt_oauth)
+
+### Pendências
+- Backfill workers (sync de orders existentes pós-conexão) — vem em EPIC-12
+- LGPD redact webhooks — vem em EPIC-08
+- Pra dev local, webhook URL precisa de tunnel HTTPS público (Cloudflared/ngrok)

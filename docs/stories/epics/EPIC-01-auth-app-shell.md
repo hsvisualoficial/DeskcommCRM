@@ -21,7 +21,7 @@ exposes_contracts:
   - "ui.<ThemeToggle>"
   - "layout.app-authenticated"
   - "cookie.sb-deskcomm-auth"
-status: pending
+status: completed
 created_at: 2026-04-28
 owner: Rafael Melgaço
 ---
@@ -1152,3 +1152,37 @@ exposes:
 - Design system refs: `06-components.md` (Avatar, DropdownMenu, Dialog, Toast), `05-iconography-phosphor.md`, `04-density-aerada.md`, `08-accessibility.md`
 - Business rules: L-04 (force-MFA admin), T-02 (audit cross-tenant), T-06 (seed)
 - Reconciliation log: ver `docs/specs/RECONCILIATION-LOG.md` pra eventuais R-XX que tocam auth
+
+---
+
+## ✅ Wave Completion Log
+
+Concluído em 2026-04-28 (sessões 1-2).
+
+| Wave | Story | Commit |
+|------|-------|--------|
+| 1 | S-01.01 Middleware proteção (cookie sb-deskcomm-auth) | `1310d4e` |
+| 2 | S-01.02 /login page (RHF+Zod) | `60990bb` |
+| 3 | S-01.03 signInWithPassword + audit | `60990bb` |
+| 4 | S-01.04 /login/mfa challenge (TOTPInput auto-advance) | `b7acbc6` |
+| 5 | S-01.05 /login/recovery + useRecoveryCode | `b7acbc6` |
+| 6 | S-01.06 useAuth/useUser/useActiveOrg/usePermission | `efb1b55` |
+| 7 | S-01.07 signOut action | `efb1b55` |
+| 8 | S-01.08 app/(app)/layout.tsx → app/app/layout.tsx | `d7de254` + `a078f83` |
+| 9 | S-01.09 Sidebar + collapse | `d7de254` |
+| 10 | S-01.10 TopBar + TenantSwitcher + UserMenu | `d7de254` |
+| 11 | S-01.11 MfaEnrollGate + MfaEnrollModal | `b7acbc6` |
+| 12 | S-01.12 RecoveryCodesPanel + lib/auth/recovery-codes | `b7acbc6` |
+
+### Bugs caçados na E2E manual
+1. Cookie name mismatch (server.ts/browser.ts não passavam cookieOptions.name)
+2. Server Action cookie propagation race — fixado com `redirect()` server-side
+3. Route group `(app)` produzia URLs sem `/app` prefix → renomeado pra `app/app/`
+4. Phosphor icons em RSC — usar variant `/dist/ssr`
+5. `organizations.name` não existe — schema real tem `display_name`
+6. Service role placeholder — refatorado pra user-scoped client + RLS-safe queries
+
+### Seed admin user
+- Email: `rafael@maudibrasil.com.br` / Senha: `DeskcommAdmin@2026` (TROCAR APÓS PRIMEIRO LOGIN)
+- Criado via GoTrue REST signup + email confirmado via SQL + membership inserida
+- Role: admin → MfaEnrollGate aparece no primeiro login

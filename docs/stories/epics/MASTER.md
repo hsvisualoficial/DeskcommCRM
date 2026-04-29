@@ -29,18 +29,18 @@ estimated_calendar: 8-12 semanas
 
 | # | ID | Nome | Stories | Points | Prioridade | Status | Arquivo |
 |---|---|---|---|---|---|---|---|
-| 0 | EPIC-00 | Foundation & Tooling | 8 | 21 | P0 | pending | `EPIC-00-foundation.md` |
-| 1 | EPIC-01 | Auth & App Shell | 12 | 38 | P0 | pending | `EPIC-01-auth-app-shell.md` |
+| 0 | EPIC-00 | Foundation & Tooling | 8 | 21 | P0 | ✅ completed | `EPIC-00-foundation.md` |
+| 1 | EPIC-01 | Auth & App Shell | 12 | 38 | P0 | ✅ completed | `EPIC-01-auth-app-shell.md` |
 | 2 | EPIC-02 | Tenant Onboarding | 8 | 26 | P0 | pending | `EPIC-02-onboarding.md` |
 | 3 | EPIC-03 | Inbox + Messaging | 15 | 55 | P0 | pending | `EPIC-03-inbox-messaging.md` |
-| 4 | EPIC-04 | Pipeline Kanban | 10 | 34 | P0 | pending | `EPIC-04-kanban.md` |
+| 4 | EPIC-04 | Pipeline Kanban | 10 | 34 | P0 | ✅ completed | `EPIC-04-kanban.md` |
 | 5 | EPIC-05 | Customer 360 + Contacts | 9 | 28 | P0 | pending | `EPIC-05-customer-360.md` |
-| 6 | EPIC-06 | AI Agent + RAG | 12 | 42 | P0 | pending | `EPIC-06-ai-rag.md` |
-| 7 | EPIC-07 | Nuvemshop Integration | 11 | 36 | P0 | pending | `EPIC-07-nuvemshop.md` |
-| 8 | EPIC-08 | LGPD Compliance | 8 | 26 | P0 | pending | `EPIC-08-lgpd.md` |
+| 6 | EPIC-06 | AI Agent + RAG | 12 | 42 | P0 | pending (Phase 3 gated) | `EPIC-06-ai-rag.md` |
+| 7 | EPIC-07 | Nuvemshop Integration | 11 | 36 | P0 | ✅ completed (env-empty-ready) | `EPIC-07-nuvemshop.md` |
+| 8 | EPIC-08 | LGPD Compliance | 8 | 26 | P0 | pending (Phase 3 gated) | `EPIC-08-lgpd.md` |
 | 9 | EPIC-09 | Team & Permissions | 7 | 19 | P0 | pending | `EPIC-09-team.md` |
 | 10 | EPIC-10 | Audit & Settings | 9 | 26 | P0 | pending | `EPIC-10-audit-settings.md` |
-| 11 | EPIC-11 | Super-Admin Platform | 14 | 48 | P0 | pending | `EPIC-11-admin-platform.md` |
+| 11 | EPIC-11 | Super-Admin Platform | 14 | 48 | P0 | pending (Phase 3 gated) | `EPIC-11-admin-platform.md` |
 | 12 | EPIC-12 | Hardening + E2E + Polish | 10 | 31 | P0 | pending | `EPIC-12-hardening.md` |
 
 **Totais**: 13 epics · 133 stories · ~430 points

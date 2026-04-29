@@ -20,7 +20,7 @@ exposes_contracts:
   - "event.lead.stage_changed"
   - "event.lead.won"
   - "event.lead.lost"
-status: pending
+status: completed
 created_at: 2026-04-28
 owner: Rafael Melgaço
 ---
@@ -857,3 +857,53 @@ exposes:
 - Specs refs: 02 §2.4 (crm_leads), 02 §3 (triggers), 04 §6 (Kanban), 09 §7.2 (Pattern B), 09 §6 (Realtime registry)
 - Business rules: P-01, P-02, P-03, P-04, P-05, P-06, P-07, P-08, AT-06
 - Reconciliation log: pendente `R-04.1` se ADR-04.1 (expected_updated_at canônico) precisar ser propagado em Spec 09
+
+---
+
+## ✅ Wave Completion Log
+
+Concluído em 2026-04-28 via Mode A inline orchestration. Combo splits:
+- Combo-A: API endpoints (waves 1-3)
+- Combo-B: Hooks + components (waves 4-7)
+- Combo-C: Filters + bulk + page + seed (waves 8-10)
+
+| Wave | Story | Status | Commit |
+|------|-------|--------|--------|
+| 1 | S-04.01 leads/move endpoint (OCC + P-01 + emit) | ✅ | `69db4f5` |
+| 2 | S-04.02 win/lose endpoints (P-02 + P-03) | ✅ | `69db4f5` |
+| 3 | S-04.03 bulk action endpoint (AT-06) | ✅ | `69db4f5` |
+| 4 | S-04.04 useBoard + realtime kanban-{pipelineId} | ✅ | `ee2d542` |
+| 5 | S-04.05 useMoveCard Pattern B (optimistic + 409 rollback) | ✅ | `ee2d542` |
+| 6 | S-04.06 KanbanBoard + StageColumn (@hello-pangea/dnd) | ✅ | `ee2d542` |
+| 7 | S-04.07 KanbanCard + actions + LoseLeadDialog | ✅ | `ee2d542` |
+| 8 | S-04.08 FilterBar + applyFilters | ✅ | `29c5ee6` |
+| 9 | S-04.09 BulkActionBar + useBulkAction | ✅ | `29c5ee6` |
+| 10 | S-04.10 Pipeline page + picker + seed | ✅ | `29c5ee6` |
+
+### Seed data (org `deskcomm-admin`)
+- Pipeline `Pedidos` (já existia via trigger org-init); 8 stages canônicos
+- 12 leads inseridos via Supabase MCP: 10 open (varied stages) + 1 won + 1 lost
+- Lost reason canônica: `cancelled_by_customer` (do enum DB trigger)
+
+### Architecture contracts emitted
+- `api.POST /api/v1/leads/[id]/move` — body `{stage_id, position_in_stage, expected_updated_at}` → 200/404/409/422
+- `api.POST /api/v1/leads/[id]/win` — idempotent
+- `api.POST /api/v1/leads/[id]/lose` — exige `lost_reason` ∈ enum canônico ou pipeline.settings.lost_reasons
+- `api.POST /api/v1/leads/bulk` — discriminated union move|assign|tag|delete, max 50
+- `realtime.kanban-{pipeline_id}` — postgres_changes em `crm_leads` filtrado por pipeline_id
+- `hook.useBoard`, `useMoveCard`, `useWinLead`, `useLoseLead`, `useBulkAction`
+- `ui.<KanbanBoard>`, `<StageColumn>`, `<KanbanCard>`, `<KanbanCardActions>`, `<LoseLeadDialog>`, `<FilterBar>`, `<BulkActionBar>`
+- `event.lead.stage_changed`, `lead.won`, `lead.lost`, `lead.bulk_moved/assigned/tagged/deleted` (em `event_log` via `emit_event`)
+- Const exportada: `CANONICAL_LOST_REASONS` em `lib/schemas/leads.ts`
+
+### Decisões registradas
+- D-04.01: `expected_updated_at` é mecanismo OCC canônico em mutations Pattern B
+- D-04.02: Trigger `fn_crm_lead_close_on_stage` é fonte única pra status; endpoints NUNCA setam status='won'/'lost' direto
+- D-04.03: lost_reason validado por DB trigger contra enum canônico + pipeline.settings.lost_reasons jsonb extension
+- D-04.04: Selection state vive na página, não no KanbanBoard (Combo-C lifted state pra wirar BulkActionBar)
+- D-04.05: NaN do midpoint silenciosamente aborta o move (rebalance global = follow-up)
+
+### Pendências / Follow-ups
+- Global rebalance quando precisão decimal degrada (>20 níveis) — placeholder em `fractional-indexing.ts`
+- Owner dropdown em FilterBar lista só "Todos / Sem responsável / Eu" (precisa endpoint de membros do org — vem em EPIC-09)
+- usePipelineVocabulary hook ainda não consumido em UI (StageColumn poderia usar p/ rotular won/lost)
