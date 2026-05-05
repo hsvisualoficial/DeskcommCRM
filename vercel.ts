@@ -18,13 +18,7 @@ import type { VercelConfig } from "@vercel/config/v1";
 
 const config: VercelConfig = {
   crons: [
-    { path: "/api/v1/cron/recover-stuck-messages", schedule: "*/5 * * * *" },
-    { path: "/api/v1/cron/sync-sessions", schedule: "*/15 * * * *" },
-    { path: "/api/v1/cron/process-pending-webhooks", schedule: "* * * * *" },
-    { path: "/api/v1/cron/dispatch-webhooks", schedule: "* * * * *" },
-    { path: "/api/v1/cron/lgpd-data-request-worker", schedule: "0 * * * *" },
-    { path: "/api/v1/cron/nuvemshop-sync-incremental", schedule: "0 */6 * * *" },
-    { path: "/api/v1/cron/audit-log-archive", schedule: "0 3 * * *" },
+    { path: "/api/v1/cron/lgpd-sla-watcher", schedule: "0 12 * * *" },
   ],
 };
 
