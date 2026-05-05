@@ -35,8 +35,7 @@ export async function extractPdfText(buffer: Buffer): Promise<string> {
 
   // --- Fallback: pdfjs-dist legacy build ---
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js") as typeof PdfjsDist;
+    const pdfjsLib = (await import("pdfjs-dist/legacy/build/pdf.mjs")) as unknown as typeof PdfjsDist;
 
     // Disable the worker for server-side Node usage (no DOM/worker thread)
     if (pdfjsLib.GlobalWorkerOptions) {
