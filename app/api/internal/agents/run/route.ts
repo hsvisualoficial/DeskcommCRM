@@ -60,20 +60,26 @@ export async function POST(req: NextRequest): Promise<Response> {
   const requestId = randomUUID();
 
   if (!authorize(req)) {
-    return fail("unauthenticated", "Internal secret missing or invalid.", 401, { requestId });
+    return fail("unauthenticated", "Internal secret missing or invalid.", 401, {
+      requestId,
+      details: { meta: { requestId } },
+    });
   }
 
   let raw: unknown;
   try {
     raw = await req.json();
   } catch {
-    return fail("invalid_request", "Body JSON inválido.", 400, { requestId });
+    return fail("invalid_request", "Body JSON inválido.", 400, {
+      requestId,
+      details: { meta: { requestId } },
+    });
   }
   const parsed = bodySchema.safeParse(raw);
   if (!parsed.success) {
     return fail("validation_failed", "Campos inválidos.", 422, {
       requestId,
-      details: parsed.error.flatten(),
+      details: { meta: { requestId }, errors: parsed.error.flatten() },
     });
   }
 
@@ -85,9 +91,12 @@ export async function POST(req: NextRequest): Promise<Response> {
         sampleContact: parsed.data.sample_contact,
       },
     });
-    return ok(result, { requestId });
+    return ok(result, { requestId, meta: { requestId } });
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown_error";
-    return fail("internal_error", message, 500, { requestId });
+    return fail("internal_error", message, 500, {
+      requestId,
+      details: { meta: { requestId } },
+    });
   }
 }

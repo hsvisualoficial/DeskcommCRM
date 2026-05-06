@@ -13,6 +13,7 @@ export const PUBLIC_PATHS: RegExp[] = [
   /^\/api\/v1\/health$/,
   /^\/api\/v1\/webhooks\//,
   /^\/api\/v1\/cron\//,
+  /^\/api\/internal\//,
   /^\/api\/mcp(\/.*)?$/,
   /^\/_next\//,
   /^\/favicon\.ico$/,
