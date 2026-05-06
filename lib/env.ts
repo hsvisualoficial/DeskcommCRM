@@ -71,6 +71,15 @@ const schema = z.object({
     .default("false")
     .transform((v) => v === "true"),
 
+  // EPIC-13 wave 6: enquanto S-13.08 (runtime real) não landa, o endpoint
+  // :test devolve um trace fake quando esta flag = 'true'. Default 'true' em
+  // dev, deve virar 'false' em produção quando a wave 8 estiver mergeada.
+  INTERNAL_AGENT_RUN_STUB: z
+    .enum(["true", "false"])
+    .optional()
+    .default("true")
+    .transform((v) => v === "true"),
+
   // Sentry
   SENTRY_DSN: z.string().optional().default(""),
 

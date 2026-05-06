@@ -100,4 +100,13 @@ export type AuditAction =
   | "mcp.tool_called"
   | "ai.credential_created"
   | "ai.credential_deleted"
-  | "ai.credential_revalidated";
+  | "ai.credential_revalidated"
+  | "ai_agent.created"
+  | "ai_agent.updated"
+  | "ai_agent.archived"
+  | "ai_agent.duplicated"
+  | "ai_agent.paused"
+  | "ai_agent.published"
+  | "ai_agent.version_created"
+  | "ai_agent.version_updated"
+  | "ai_agent.tested";
