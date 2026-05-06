@@ -278,6 +278,187 @@ export async function publishAgentAction(
 }
 
 // ---------------------------------------------------------------------------
+// revertToVersionAction
+// ---------------------------------------------------------------------------
+//
+// Cria uma nova draft idêntica a `versionId` e a publica imediatamente. O
+// fluxo é: clone → INSERT draft v(max+1) → publishAgentVersion. Audit
+// `ai_agent.reverted` registra a ponta original. Mesma validação de tools do
+// publish original (espelha publish/route.ts).
+
+export async function revertToVersionAction(
+  agentId: string,
+  versionId: string,
+): Promise<
+  ActionResult<{
+    new_version_id: string;
+    new_version_number: number;
+    previous_version_id: string | null;
+  }>
+> {
+  if (!UUID_RX.test(agentId) || !UUID_RX.test(versionId)) {
+    return { ok: false, error: "invalid_request" };
+  }
+  const guard = await ensureAdmin();
+  if (!guard.ok) return guard;
+  const { authUser, activeOrg } = guard;
+
+  const requestId = randomUUID();
+  const admin = createAdminClient();
+
+  const { data: agent } = await admin
+    .from("ai_agents")
+    .select("id, archived_at")
+    .eq("id", agentId)
+    .eq("organization_id", activeOrg.orgId)
+    .maybeSingle();
+  if (!agent) return { ok: false, error: "not_found" };
+  if (agent.archived_at) return { ok: false, error: "agent_archived" };
+
+  const { data: source } = await admin
+    .from("ai_agent_versions")
+    .select(VERSION_COLUMNS)
+    .eq("id", versionId)
+    .eq("organization_id", activeOrg.orgId)
+    .eq("agent_id", agentId)
+    .maybeSingle();
+  if (!source) return { ok: false, error: "version_not_found" };
+
+  // Espelha tool_id check do publish.
+  const tools = ((source as { tool_ids: string[] | null }).tool_ids ?? []) as string[];
+  const valid = new Set<string>(VALID_TOOL_IDS as readonly string[]);
+  const invalid = tools.filter((t) => !valid.has(t));
+  if (invalid.length > 0) {
+    return { ok: false, error: "tool_id_invalid", details: { invalid } };
+  }
+
+  // Cria draft idêntica com retry em 23505 (race no version_number).
+  type SourceRow = {
+    system_prompt: string;
+    provider: string;
+    model: string;
+    credential_id: string;
+    tool_ids: string[];
+    trigger_config: Record<string, unknown> | null;
+    channel_session_id: string;
+    max_steps: number;
+    token_budget: number;
+    cost_budget_cents: number;
+    history_message_window: number;
+    history_token_window: number;
+    handoff_keywords: string[];
+    handoff_tool_enabled: boolean;
+  };
+  const src = source as unknown as SourceRow;
+
+  let createdId: string | null = null;
+  let createdNumber: number | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data: maxRow } = await admin
+      .from("ai_agent_versions")
+      .select("version_number")
+      .eq("agent_id", agentId)
+      .eq("organization_id", activeOrg.orgId)
+      .order("version_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const nextNumber = (maxRow?.version_number ?? 0) + 1;
+
+    const { data: created, error } = await admin
+      .from("ai_agent_versions")
+      .insert({
+        organization_id: activeOrg.orgId,
+        agent_id: agentId,
+        version_number: nextNumber,
+        system_prompt: src.system_prompt,
+        provider: src.provider,
+        model: src.model,
+        credential_id: src.credential_id,
+        tool_ids: src.tool_ids,
+        trigger_config: src.trigger_config ?? undefined,
+        channel_session_id: src.channel_session_id,
+        max_steps: src.max_steps,
+        token_budget: src.token_budget,
+        cost_budget_cents: src.cost_budget_cents,
+        history_message_window: src.history_message_window,
+        history_token_window: src.history_token_window,
+        handoff_keywords: src.handoff_keywords,
+        handoff_tool_enabled: src.handoff_tool_enabled,
+        status: "draft",
+        created_by: authUser.id,
+      })
+      .select("id, version_number")
+      .single();
+
+    if (!error && created) {
+      createdId = created.id;
+      createdNumber = created.version_number;
+      break;
+    }
+    if (error?.code !== "23505") {
+      return { ok: false, error: "internal_error", message: error?.message };
+    }
+  }
+  if (!createdId || createdNumber == null) {
+    return { ok: false, error: "internal_error", message: "Conflito de versionamento." };
+  }
+
+  const result = await publishAgentVersion(admin, {
+    orgId: activeOrg.orgId,
+    agentId,
+    versionId: createdId,
+  });
+  if (!result.ok) {
+    if (PUBLISH_ERROR_CODES.has(result.code as string)) {
+      return { ok: false, error: result.code };
+    }
+    return { ok: false, error: "internal_error" };
+  }
+
+  void admin
+    .from("event_log")
+    .insert({
+      organization_id: activeOrg.orgId,
+      event_type: "ai_agent.published",
+      payload: {
+        agent_id: result.agent_id,
+        version_id: result.version_id,
+        previous_version_id: result.previous_version_id,
+        published_at: result.published_at,
+      },
+    })
+    .then(({ error }) => {
+      if (error) console.error("[revertToVersionAction/event_log] error", error.message);
+    });
+
+  void audit({
+    action: "ai_agent.reverted",
+    actorUserId: authUser.id,
+    organizationId: activeOrg.orgId,
+    resourceType: "ai_agent",
+    resourceId: agentId,
+    requestId,
+    metadata: {
+      from_version_id: versionId,
+      new_version_id: createdId,
+      new_version_number: createdNumber,
+      previous_version_id: result.previous_version_id,
+    },
+  });
+
+  revalidatePath(`/app/ai/agents/${agentId}`);
+  revalidatePath("/app/ai/agents");
+  return {
+    ok: true,
+    data: {
+      new_version_id: createdId,
+      new_version_number: createdNumber,
+      previous_version_id: result.previous_version_id,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // createMcpAgentAction (página /ai/agents/new)
 // ---------------------------------------------------------------------------
 

@@ -100,6 +100,7 @@ export default async function AgentEditorPage({
         agent={agent}
         draft={draft}
         published={published}
+        versions={versions}
         credentials={credentials}
         channelSessions={channelSessions}
         readOnly={readOnly}
