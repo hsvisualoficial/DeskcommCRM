@@ -18,7 +18,10 @@
  *   - Dry-run path bypasses concurrency unique guard, WAHA dispatch, outbound row.
  *   - Plaintext API keys are never logged.
  */
-import { createGateway, generateText, stepCountIs, type StopCondition, type ToolSet } from "ai";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
+import { generateText, stepCountIs, type LanguageModel, type StopCondition, type ToolSet } from "ai";
 
 import { CredentialUnavailableError, loadCredential } from "@/lib/ai/credentials";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -103,6 +106,31 @@ function buildSentinelRegex(keywords: string[]): RegExp | null {
   if (cleaned.length === 0) return null;
   const escaped = cleaned.map((k) => k.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   return new RegExp(`(${escaped.join("|")})`, "i");
+}
+
+/**
+ * Builds the LM directly against the provider's own API using the org's BYOK
+ * credential (`ai_provider_credentials`, decrypted by `loadCredential`).
+ *
+ * NOT routed through Vercel AI Gateway (`createGateway`): the Gateway
+ * authenticates the CALLER with a Vercel-issued `AI_GATEWAY_API_KEY`, then
+ * uses Vercel's own configured provider keys — it does not accept a tenant's
+ * raw Anthropic/OpenAI/Google key as a substitute credential. Passing
+ * `credentialApiKey` to `createGateway({ apiKey })` always failed with
+ * "Unauthenticated. Configure AI_GATEWAY_API_KEY or use a provider module.",
+ * which is exactly what this does — a direct provider module per `provider`.
+ */
+function buildModel(provider: string, apiKey: string, modelId: string): LanguageModel {
+  switch (provider) {
+    case "anthropic":
+      return createAnthropic({ apiKey })(modelId);
+    case "openai":
+      return createOpenAI({ apiKey })(modelId);
+    case "google":
+      return createGoogleGenerativeAI({ apiKey })(modelId);
+    default:
+      throw new Error(`unsupported_provider: ${provider}`);
+  }
 }
 
 function totalUsage(steps: ReadonlyArray<{ usage?: { inputTokens?: number; outputTokens?: number } }>) {
@@ -344,9 +372,8 @@ export async function runAgent(input: RunAgentInput): Promise<RunAgentResult> {
         })
       : [];
 
-    // 9) Build LM via gateway.
-    const gatewayProvider = createGateway({ apiKey: credentialApiKey });
-    const model = gatewayProvider(`${version.provider}/${version.model}`);
+    // 9) Build LM directly against the provider (BYOK credential — see buildModel doc).
+    const model = buildModel(version.provider, credentialApiKey, version.model);
 
     // 10) Cost/token guard. Fires BEFORE the next step is taken.
     let abortReason: string | null = null;
