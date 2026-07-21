@@ -118,10 +118,12 @@ create index if not exists ai_provider_credentials_org_provider_idx
 alter table public.ai_provider_credentials enable row level security;
 
 drop policy if exists tenant_isolation_ai_provider_credentials_select on public.ai_provider_credentials;
+drop policy if exists tenant_isolation_ai_provider_credentials_select on public.ai_provider_credentials;
 create policy tenant_isolation_ai_provider_credentials_select on public.ai_provider_credentials
   for select
   using (organization_id in (select * from public.fn_user_org_ids()));
 
+drop policy if exists tenant_isolation_ai_provider_credentials_modify on public.ai_provider_credentials;
 drop policy if exists tenant_isolation_ai_provider_credentials_modify on public.ai_provider_credentials;
 create policy tenant_isolation_ai_provider_credentials_modify on public.ai_provider_credentials
   for all
@@ -202,6 +204,7 @@ create index if not exists ai_agent_versions_agent_idx
 
 alter table public.ai_agent_versions enable row level security;
 
+drop policy if exists tenant_isolation_ai_agent_versions_all on public.ai_agent_versions;
 drop policy if exists tenant_isolation_ai_agent_versions_all on public.ai_agent_versions;
 create policy tenant_isolation_ai_agent_versions_all on public.ai_agent_versions
   for all
@@ -289,6 +292,7 @@ create index if not exists ai_agent_runs_status_idx
 alter table public.ai_agent_runs enable row level security;
 
 drop policy if exists tenant_isolation_ai_agent_runs_all on public.ai_agent_runs;
+drop policy if exists tenant_isolation_ai_agent_runs_all on public.ai_agent_runs;
 create policy tenant_isolation_ai_agent_runs_all on public.ai_agent_runs
   for all
   using (organization_id in (select * from public.fn_user_org_ids()))
@@ -325,6 +329,7 @@ create table if not exists public.ai_models (
 
 alter table public.ai_models enable row level security;
 
+drop policy if exists ai_models_read_all on public.ai_models;
 drop policy if exists ai_models_read_all on public.ai_models;
 create policy ai_models_read_all on public.ai_models for select using (true);
 -- Sem policy de write — apenas service role/migration escreve.

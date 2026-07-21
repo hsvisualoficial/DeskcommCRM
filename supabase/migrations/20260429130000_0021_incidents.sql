@@ -23,8 +23,10 @@ create index if not exists incidents_severity_idx on public.incidents(severity, 
 
 alter table public.incidents enable row level security;
 
+drop policy if exists platform_admin_only_incidents on public.incidents;
 create policy platform_admin_only_incidents on public.incidents for all
   using (public.fn_is_platform_admin()) with check (public.fn_is_platform_admin());
 
+drop trigger if exists incidents_updated_at on public.incidents;
 create trigger incidents_updated_at before update on public.incidents
   for each row execute function public.fn_set_updated_at();

@@ -16,6 +16,9 @@ build/
 !.env.example
 !.env.hostgator.example
 
+# Secrets soltos criados durante o setup (nunca commitar)
+supabase/credenciais.txt
+
 # Testing & coverage
 coverage/
 .nyc_output/

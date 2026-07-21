@@ -27,6 +27,7 @@ create index if not exists storage_redaction_queue_org_idx
 alter table public.storage_redaction_queue enable row level security;
 
 drop policy if exists tenant_isolation_storage_redaction_queue_all on public.storage_redaction_queue;
+drop policy if exists tenant_isolation_storage_redaction_queue_all on public.storage_redaction_queue;
 create policy tenant_isolation_storage_redaction_queue_all on public.storage_redaction_queue
   for all
   using (organization_id in (select * from public.fn_user_org_ids()))

@@ -16,6 +16,7 @@ on conflict (id) do nothing;
 -- Worker uploads/deletes via service-role (bypasses RLS naturally) — no
 -- INSERT/DELETE policy is added for anon/authenticated since users must
 -- never write to this bucket.
+drop policy if exists "tenant_read_lgpd_exports" on storage.objects;
 create policy "tenant_read_lgpd_exports" on storage.objects for select
   using (
     bucket_id = 'lgpd-exports'

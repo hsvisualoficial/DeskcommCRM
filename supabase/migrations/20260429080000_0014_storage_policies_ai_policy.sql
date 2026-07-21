@@ -13,6 +13,7 @@ values (
 on conflict (id) do nothing;
 
 -- Per-tenant read policy: only members of the organization owning the path prefix
+drop policy if exists "tenant_read_ai_policy" on storage.objects;
 create policy "tenant_read_ai_policy" on storage.objects for select
   using (
     bucket_id = 'ai-policy'
@@ -25,6 +26,7 @@ create policy "tenant_read_ai_policy" on storage.objects for select
   );
 
 -- Per-tenant write policy: only members can upload to their own org prefix
+drop policy if exists "tenant_write_ai_policy" on storage.objects;
 create policy "tenant_write_ai_policy" on storage.objects for insert
   with check (
     bucket_id = 'ai-policy'
@@ -37,6 +39,7 @@ create policy "tenant_write_ai_policy" on storage.objects for insert
   );
 
 -- Per-tenant delete policy: only members can delete their own org files
+drop policy if exists "tenant_delete_ai_policy" on storage.objects;
 create policy "tenant_delete_ai_policy" on storage.objects for delete
   using (
     bucket_id = 'ai-policy'
