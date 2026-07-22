@@ -125,4 +125,5 @@ export type AuditAction =
   | "message.scheduled"
   | "message.schedule_canceled"
   | "message.schedule_dispatched"
-  | "cadence.activated";
+  | "cadence.activated"
+  | "ai.sdr_qualified";
