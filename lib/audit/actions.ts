@@ -121,4 +121,8 @@ export type AuditAction =
   | "snippet.updated"
   | "snippet.deleted"
   | "conversation.note_created"
-  | "conversation.summarized";
+  | "conversation.summarized"
+  | "message.scheduled"
+  | "message.schedule_canceled"
+  | "message.schedule_dispatched"
+  | "cadence.activated";

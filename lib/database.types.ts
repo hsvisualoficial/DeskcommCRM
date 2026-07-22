@@ -764,6 +764,78 @@ export type Database = {
           },
         ]
       }
+      scheduled_messages: {
+        Row: {
+          attempts: number
+          body: string
+          contact_id: string
+          conversation_id: string | null
+          created_at: string
+          created_by_user_id: string | null
+          id: string
+          last_error: string | null
+          lead_id: string | null
+          organization_id: string
+          scheduled_for: string
+          sent_message_id: string | null
+          source: string
+          status: string
+          trigger_ref: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          body: string
+          contact_id: string
+          conversation_id?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          id?: string
+          last_error?: string | null
+          lead_id?: string | null
+          organization_id: string
+          scheduled_for: string
+          sent_message_id?: string | null
+          source?: string
+          status?: string
+          trigger_ref?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          body?: string
+          contact_id?: string
+          conversation_id?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          id?: string
+          last_error?: string | null
+          lead_id?: string | null
+          organization_id?: string
+          scheduled_for?: string
+          sent_message_id?: string | null
+          source?: string
+          status?: string
+          trigger_ref?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_messages_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           anonymized_at: string | null

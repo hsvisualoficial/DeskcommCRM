@@ -2,6 +2,7 @@
 import { useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNowTick } from "@/hooks/inbox/useNowTick";
 import { ConversationListItem } from "./ConversationListItem";
 import { EmptyInbox } from "@/components/empty";
 import {
@@ -30,6 +31,8 @@ export function ConversationList({
   onVisibleChange,
 }: Props) {
   const q = useConversationsRealtime(filters, orgId);
+  // Tick único para todos os itens atualizarem o SLA sem N intervalos.
+  const nowMs = useNowTick(30_000);
 
   const items = useMemo(() => {
     const all: ConversationWithContact[] = q.data?.pages.flatMap((p) => p.data) ?? [];
@@ -88,6 +91,7 @@ export function ConversationList({
             conversation={c}
             isSelected={c.id === selectedId}
             onSelect={onSelect}
+            nowMs={nowMs}
           />
         ))}
         {q.hasNextPage && (

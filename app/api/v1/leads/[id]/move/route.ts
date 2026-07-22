@@ -15,6 +15,7 @@ import { ApiError } from "@/lib/api/types";
 import { ok, fail } from "@/lib/api/wrappers";
 import { moveLeadSchema, validateRequest } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
+import { enqueueStageCadence } from "@/lib/cadence/enqueue";
 
 export const dynamic = "force-dynamic";
 
@@ -159,6 +160,24 @@ export async function POST(
       position_in_stage: input.position_in_stage,
     },
   });
+
+  // Régua de cadência por etapa: se a etapa mudou e o pipeline tem regras em
+  // settings.cadence pra etapa de destino, enfileira os follow-ups agendados.
+  if (input.stage_id !== lead.stage_id) {
+    const { data: pipe } = await supabase
+      .from("crm_pipelines")
+      .select("settings")
+      .eq("id", lead.pipeline_id)
+      .maybeSingle();
+    await enqueueStageCadence(supabase, {
+      organizationId: lead.organization_id,
+      leadId,
+      contactId: lead.contact_id,
+      newStageId: input.stage_id,
+      pipelineSettings: (pipe as { settings?: unknown } | null)?.settings,
+      actorUserId: user.id,
+    }).catch((e) => console.error("[lead.move] cadence enqueue failed", e));
+  }
 
   return ok(finalLead, { requestId });
 }

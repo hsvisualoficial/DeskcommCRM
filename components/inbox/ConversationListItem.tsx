@@ -5,6 +5,8 @@ import { Robot } from "@/lib/ui/icons";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { PriorityBadge } from "@/components/leads/PriorityBadge";
+import { SlaBadge } from "./SlaBadge";
+import { computeSla } from "@/lib/inbox/sla";
 import { cn } from "@/lib/utils";
 import type { ConversationWithContact } from "@/hooks/inbox/useConversationsRealtime";
 
@@ -12,6 +14,8 @@ interface Props {
   conversation: ConversationWithContact;
   isSelected: boolean;
   onSelect: (id: string) => void;
+  /** Timestamp compartilhado (tick) para calcular o SLA. */
+  nowMs?: number;
 }
 
 const STATUS_DOT: Record<string, string> = {
@@ -44,8 +48,13 @@ function relativeTime(iso: string | null): string {
   return format(d, "dd/MM");
 }
 
-export function ConversationListItem({ conversation, isSelected, onSelect }: Props) {
+export function ConversationListItem({ conversation, isSelected, onSelect, nowMs }: Props) {
   const c = conversation.contacts ?? null;
+  const sla = computeSla(
+    conversation.last_inbound_at,
+    conversation.last_outbound_at,
+    nowMs ?? Date.now(),
+  );
   const displayName =
     c?.display_name?.trim() ||
     c?.name?.trim() ||
@@ -108,6 +117,7 @@ export function ConversationListItem({ conversation, isSelected, onSelect }: Pro
         </p>
 
         <div className="mt-1.5 flex flex-wrap items-center gap-1">
+          <SlaBadge state={sla} size="sm" />
           {c?.priority_tag && (
             <PriorityBadge tag={c.priority_tag} size="sm" showLabel={false} />
           )}

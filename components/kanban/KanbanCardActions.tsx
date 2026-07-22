@@ -11,6 +11,7 @@ import { DotsThree, PencilSimple } from "@/lib/ui/icons";
 import { useWinLead } from "@/hooks/kanban/useUpdateLead";
 import { LoseLeadDialog } from "./LoseLeadDialog";
 import { EditLeadDialog } from "./EditLeadDialog";
+import { FollowupDialog } from "./FollowupDialog";
 import type { Lead } from "@/lib/types/leads";
 
 interface KanbanCardActionsProps {
@@ -21,6 +22,7 @@ interface KanbanCardActionsProps {
 export function KanbanCardActions({ lead, pipelineId }: KanbanCardActionsProps) {
   const [loseOpen, setLoseOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [followupOpen, setFollowupOpen] = useState(false);
   const winMutation = useWinLead(pipelineId);
 
   return (
@@ -47,6 +49,13 @@ export function KanbanCardActions({ lead, pipelineId }: KanbanCardActionsProps) 
             }}
           >
             <PencilSimple size={14} className="mr-2" /> Editar
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => {
+              setFollowupOpen(true);
+            }}
+          >
+            Agendar follow-up / régua
           </DropdownMenuItem>
           <DropdownMenuItem
             disabled={winMutation.isPending}
@@ -78,6 +87,7 @@ export function KanbanCardActions({ lead, pipelineId }: KanbanCardActionsProps) 
         lead={lead}
         pipelineId={pipelineId}
       />
+      <FollowupDialog open={followupOpen} onOpenChange={setFollowupOpen} lead={lead} />
     </>
   );
 }

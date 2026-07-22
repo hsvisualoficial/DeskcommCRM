@@ -4274,3 +4274,60 @@ drop policy if exists tenant_isolation_conversation_notes_all on public.conversa
 create policy tenant_isolation_conversation_notes_all on public.conversation_notes for all
   using (organization_id in (select * from public.fn_user_org_ids()))
   with check (organization_id in (select * from public.fn_user_org_ids()));
+
+-- ---- disparos agendados / cadência (migration 0031) ----
+create table if not exists public.scheduled_messages (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  contact_id uuid not null references public.contacts(id) on delete cascade,
+  conversation_id uuid references public.conversations(id) on delete set null,
+  lead_id uuid references public.crm_leads(id) on delete set null,
+  body text not null,
+  scheduled_for timestamptz not null,
+  status text not null default 'pending',
+  source text not null default 'manual',
+  trigger_ref text,
+  attempts smallint not null default 0,
+  last_error text,
+  sent_message_id uuid references public.messages(id) on delete set null,
+  created_by_user_id uuid,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint scheduled_messages_status_check check (status = any (array['pending'::text, 'sent'::text, 'failed'::text, 'canceled'::text])),
+  constraint scheduled_messages_source_check check (source = any (array['manual'::text, 'cadence'::text])),
+  constraint scheduled_messages_body_len check (char_length(body) between 1 and 4000)
+);
+create index if not exists scheduled_messages_due_idx on public.scheduled_messages (status, scheduled_for);
+create index if not exists scheduled_messages_org_contact_idx on public.scheduled_messages (organization_id, contact_id, status);
+create unique index if not exists scheduled_messages_cadence_dedupe_idx
+  on public.scheduled_messages (contact_id, trigger_ref)
+  where status = 'pending' and trigger_ref is not null;
+alter table public.scheduled_messages enable row level security;
+drop policy if exists tenant_isolation_scheduled_messages_all on public.scheduled_messages;
+create policy tenant_isolation_scheduled_messages_all on public.scheduled_messages for all
+  using (organization_id in (select * from public.fn_user_org_ids()))
+  with check (organization_id in (select * from public.fn_user_org_ids()));
+
+-- ---- RPC média de primeira resposta (migration 0032) ----
+create or replace function public.fn_sdr_first_response_avg_seconds(
+  p_organization_id uuid,
+  p_since timestamptz
+) returns numeric
+  language sql stable set search_path = public
+as $$
+  with firsts as (
+    select m.conversation_id, min(m.sent_at) filter (where m.direction = 'inbound') as first_in
+    from public.messages m
+    where m.organization_id = p_organization_id and m.sent_at >= p_since
+    group by m.conversation_id
+  ),
+  paired as (
+    select f.conversation_id, f.first_in,
+      (select min(o.sent_at) from public.messages o
+        where o.conversation_id = f.conversation_id and o.direction = 'outbound' and o.sent_at > f.first_in) as first_out
+    from firsts f
+    where f.first_in is not null
+  )
+  select avg(extract(epoch from (first_out - first_in))) from paired where first_out is not null;
+$$;
+grant execute on function public.fn_sdr_first_response_avg_seconds(uuid, timestamptz) to authenticated;

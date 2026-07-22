@@ -19,6 +19,7 @@ function formatError(err: unknown): string {
   return String(err);
 }
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
+import { KanbanMetricsBar } from "@/components/kanban/KanbanMetricsBar";
 import { FilterBar } from "@/components/kanban/FilterBar";
 import { BulkActionBar } from "@/components/kanban/BulkActionBar";
 import { NewLeadDialog } from "@/components/kanban/NewLeadDialog";
@@ -51,6 +52,7 @@ export function PipelinePageClient({
           <Plus size={16} className="mr-2" /> Novo Lead
         </Button>
       </header>
+      <KanbanMetricsBar pipelineId={pipelineId} />
       {data && (
         <NewLeadDialog
           open={newOpen}
