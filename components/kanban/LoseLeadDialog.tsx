@@ -15,9 +15,11 @@ import { useLoseLead } from "@/hooks/kanban/useUpdateLead";
 import { CANONICAL_LOST_REASONS } from "@/lib/schemas/leads";
 
 const REASON_LABELS: Record<(typeof CANONICAL_LOST_REASONS)[number], string> = {
-  requested_by_customer: "Cliente solicitou cancelamento",
   price: "Preço",
-  no_response: "Sem resposta do cliente",
+  no_profile: "Sem perfil (fora do ICP)",
+  bought_competitor: "Comprou em outra",
+  no_response: "Sem resposta",
+  requested_by_customer: "Cliente solicitou cancelamento",
   product_unavailable: "Produto indisponível",
   cancelled_by_store: "Cancelado pela loja",
   cancelled_by_customer: "Cancelado pelo cliente",

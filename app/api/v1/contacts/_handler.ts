@@ -22,7 +22,7 @@ import type {
 type SB = SupabaseClient;
 
 const SELECT_COLS =
-  "id, organization_id, name, display_name, email, email_normalized, phone_number, cpf_hash, birthdate, is_blocked, blocked_reason, is_anonymized, anonymized_at, is_merged_into, merged_at, consent, tags, source, source_metadata, created_at, updated_at, last_activity_at";
+  "id, organization_id, name, display_name, email, email_normalized, phone_number, cpf_hash, birthdate, is_blocked, blocked_reason, is_anonymized, anonymized_at, is_merged_into, merged_at, consent, tags, source, source_metadata, score, priority_tag, custom_fields, created_at, updated_at, last_activity_at";
 
 const ROLE_RANK: Record<string, number> = {
   viewer: 1,
@@ -251,6 +251,8 @@ export async function createContactHandler(
     source: input.source,
     source_metadata: input.source_metadata ?? {},
     consent: input.consent ?? {},
+    score: input.score ?? 0,
+    custom_fields: input.custom_fields ?? {},
   };
 
   if (input.cpf) {
@@ -347,6 +349,8 @@ export async function patchContactHandler(
   if (input.source !== undefined) patch.source = input.source;
   if (input.source_metadata !== undefined) patch.source_metadata = input.source_metadata;
   if (input.consent !== undefined) patch.consent = input.consent;
+  if (input.score !== undefined) patch.score = input.score;
+  if (input.custom_fields !== undefined) patch.custom_fields = input.custom_fields;
   if (input.cpf !== undefined) {
     patch.cpf_hash = hashCpf(input.cpf);
     const enc = await encryptCpfSql(supabase, input.cpf);

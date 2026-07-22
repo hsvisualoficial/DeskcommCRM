@@ -9,6 +9,7 @@ import { midpoint } from "@/lib/kanban/fractional-indexing";
 import type { Lead } from "@/lib/types/leads";
 import type { Pipeline, Stage } from "@/lib/kanban/types";
 import { StageColumn } from "./StageColumn";
+import { LoseLeadDialog } from "./LoseLeadDialog";
 
 interface KanbanBoardProps {
   pipelineId: string;
@@ -63,6 +64,11 @@ export function KanbanBoard({
   const useExternal = stagesProp !== undefined && leadsProp !== undefined;
   const queryResult = useBoard(useExternal ? null : pipelineId);
   const moveCard = useMoveCard(pipelineId);
+
+  // Lead arrastado para uma coluna is_lost: exige motivo de perda antes de
+  // efetivar (o endpoint /lose move pra stage is_lost + grava lost_reason; a
+  // constraint crm_leads_lost_reason_required rejeitaria um /move seco).
+  const [pendingLose, setPendingLose] = useState<Lead | null>(null);
 
   const [internalSelected, setInternalSelected] = useState<Set<string>>(new Set());
   const selectedLeadIds = useMemo(
@@ -123,6 +129,15 @@ export function KanbanBoard({
       if (!lead) return;
 
       const destStageId = destination.droppableId;
+
+      // Trava: soltou numa coluna "Perdido" → abre modal de motivo em vez de
+      // mover direto. (Se já está perdido, deixa reordenar normalmente.)
+      const destStage = data.stages.find((s) => s.id === destStageId);
+      if (destStage?.is_lost && lead.status !== "lost") {
+        setPendingLose(lead);
+        return;
+      }
+
       const destList = (grouped.get(destStageId) ?? []).filter(
         (l) => l.id !== draggableId,
       );
@@ -177,19 +192,32 @@ export function KanbanBoard({
   }
 
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="flex h-full gap-3 overflow-x-auto p-4">
-        {data.stages.map((stage) => (
-          <StageColumn
-            key={stage.id}
-            stage={stage}
-            leads={grouped.get(stage.id) ?? []}
-            pipelineId={pipelineId}
-            selectedLeadIds={selectedLeadIds}
-            onSelect={handleSelect}
-          />
-        ))}
-      </div>
-    </DragDropContext>
+    <>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="flex h-full gap-3 overflow-x-auto p-4">
+          {data.stages.map((stage) => (
+            <StageColumn
+              key={stage.id}
+              stage={stage}
+              leads={grouped.get(stage.id) ?? []}
+              pipelineId={pipelineId}
+              selectedLeadIds={selectedLeadIds}
+              onSelect={handleSelect}
+            />
+          ))}
+        </div>
+      </DragDropContext>
+
+      {pendingLose && (
+        <LoseLeadDialog
+          open={pendingLose !== null}
+          onOpenChange={(v) => {
+            if (!v) setPendingLose(null);
+          }}
+          leadId={pendingLose.id}
+          pipelineId={pipelineId}
+        />
+      )}
+    </>
   );
 }

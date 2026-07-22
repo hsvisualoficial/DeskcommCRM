@@ -53,7 +53,9 @@ export async function GET(_req: NextRequest, ctx: RouteCtx): Promise<Response> {
       .order("position"),
     supabase
       .from("crm_leads")
-      .select("*")
+      .select(
+        "*, contact:contacts!crm_leads_contact_id_fkey(id, name, display_name, score, priority_tag)",
+      )
       .eq("pipeline_id", pipelineId)
       .neq("status", "archived")
       .order("position_in_stage"),

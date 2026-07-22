@@ -16,12 +16,17 @@ import { Label } from "@/components/ui/label";
 import { contactPatchSchema, type ContactPatch } from "@/lib/schemas/contacts";
 import { useUpdateContact } from "@/hooks/contacts/useUpdateContact";
 import type { Contact } from "@/lib/types/contacts";
+import { CustomFieldsEditor } from "@/components/contacts/CustomFieldsEditor";
+import { PriorityBadge } from "@/components/leads/PriorityBadge";
+import { SEGMENT_CUSTOM_FIELDS } from "@/lib/leads/segment-fields";
+import { scoreToPriority, PRIORITY_RANGE_HINT } from "@/lib/leads/priority";
 
 interface FormShape {
   name?: string;
   email?: string;
   phone_number?: string;
   tagsRaw?: string;
+  score?: number;
 }
 
 interface Props {
@@ -33,6 +38,9 @@ interface Props {
 export function EditContactDialog({ contact, open, onOpenChange }: Props) {
   const update = useUpdateContact(contact.id);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [customFields, setCustomFields] = useState<Record<string, unknown>>(
+    contact.custom_fields ?? {},
+  );
 
   const form = useForm<FormShape>({
     defaultValues: {
@@ -40,8 +48,13 @@ export function EditContactDialog({ contact, open, onOpenChange }: Props) {
       email: contact.email ?? "",
       phone_number: contact.phone_number ?? "",
       tagsRaw: contact.tags.join(", "),
+      score: contact.score ?? 0,
     },
   });
+
+  // Prévia ao vivo da prioridade conforme o score digitado (espelha o DB).
+  const watchedScore = form.watch("score");
+  const previewPriority = scoreToPriority(Number(watchedScore) || 0);
 
   useEffect(() => {
     if (open) {
@@ -50,7 +63,9 @@ export function EditContactDialog({ contact, open, onOpenChange }: Props) {
         email: contact.email ?? "",
         phone_number: contact.phone_number ?? "",
         tagsRaw: contact.tags.join(", "),
+        score: contact.score ?? 0,
       });
+      setCustomFields(contact.custom_fields ?? {});
     }
   }, [open, contact, form]);
 
@@ -61,11 +76,15 @@ export function EditContactDialog({ contact, open, onOpenChange }: Props) {
       .map((s) => s.trim())
       .filter(Boolean);
 
+    const scoreNum = Math.max(0, Math.min(100, Math.round(Number(values.score) || 0)));
+
     const payload: Record<string, unknown> = {};
     if (values.name?.trim()) payload.name = values.name.trim();
     if (values.email?.trim()) payload.email = values.email.trim();
     if (values.phone_number?.trim()) payload.phone_number = values.phone_number.trim();
     payload.tags = tags;
+    payload.score = scoreNum;
+    payload.custom_fields = customFields;
 
     const parsed = contactPatchSchema.safeParse(payload);
     if (!parsed.success) {
@@ -105,6 +124,33 @@ export function EditContactDialog({ contact, open, onOpenChange }: Props) {
             <Label htmlFor="ec-tags">Tags</Label>
             <Input id="ec-tags" {...form.register("tagsRaw")} />
           </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="ec-score">Score de qualificação</Label>
+              <PriorityBadge tag={previewPriority} />
+            </div>
+            <Input
+              id="ec-score"
+              type="number"
+              min={0}
+              max={100}
+              {...form.register("score", { valueAsNumber: true })}
+            />
+            <p className="text-xs text-muted-foreground">{PRIORITY_RANGE_HINT}</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Campos por segmento</Label>
+            <CustomFieldsEditor
+              fields={SEGMENT_CUSTOM_FIELDS}
+              value={customFields}
+              onChange={setCustomFields}
+              mode="contact"
+              disabled={update.isPending}
+            />
+          </div>
+
           {serverError && <p className="text-sm text-error-fg">{serverError}</p>}
           <DialogFooter>
             <Button

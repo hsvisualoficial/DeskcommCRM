@@ -45,6 +45,10 @@ export const contactCreateSchema = z.object({
   source: z.string().min(1).default("manual"),
   source_metadata: z.record(z.string(), z.unknown()).optional(),
   consent: z.record(z.string(), z.unknown()).optional(),
+  /** Pontuação de qualificação SDR (0-100). priority_tag é derivada no DB. */
+  score: z.coerce.number().int().min(0).max(100).optional(),
+  /** Dados por segmento (orçamento, tipo de imóvel/serviço, etc.). */
+  custom_fields: z.record(z.string(), z.unknown()).optional(),
 });
 export type ContactCreate = z.infer<typeof contactCreateSchema>;
 

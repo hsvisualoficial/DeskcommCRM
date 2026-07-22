@@ -677,6 +677,7 @@ export type Database = {
           cpf_hash: string | null
           created_at: string
           created_by_user_id: string | null
+          custom_fields: Json
           display_name: string | null
           email: string | null
           email_normalized: string | null
@@ -689,6 +690,8 @@ export type Database = {
           name: string | null
           organization_id: string
           phone_number: string | null
+          priority_tag: string | null
+          score: number
           source: string
           source_metadata: Json
           tags: string[]
@@ -718,6 +721,8 @@ export type Database = {
           phone_number?: string | null
           source?: string
           source_metadata?: Json
+          custom_fields?: Json
+          score?: number
           tags?: string[]
           updated_at?: string
         }
@@ -745,6 +750,8 @@ export type Database = {
           phone_number?: string | null
           source?: string
           source_metadata?: Json
+          custom_fields?: Json
+          score?: number
           tags?: string[]
           updated_at?: string
         }

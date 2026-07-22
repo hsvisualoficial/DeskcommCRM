@@ -2,6 +2,8 @@
  * Domain types for Contacts (EPIC-05).
  * Mirror the verified `contacts` schema (see CLAUDE.md / Spec 05).
  */
+import type { PriorityTag } from "@/lib/leads/priority";
+
 export interface Contact {
   id: string;
   organization_id: string;
@@ -22,6 +24,12 @@ export interface Contact {
   tags: string[];
   source: string;
   source_metadata: Record<string, unknown>;
+  /** Pontuação de qualificação SDR (0-100). Alimenta `priority_tag`. */
+  score: number;
+  /** Prioridade derivada do score (coluna gerada no DB). Read-only. */
+  priority_tag: PriorityTag | null;
+  /** Dados específicos por segmento (orçamento, tipo de imóvel/serviço, etc.). */
+  custom_fields: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   last_activity_at: string | null;

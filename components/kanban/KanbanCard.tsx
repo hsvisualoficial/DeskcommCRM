@@ -2,6 +2,7 @@
 import { Draggable } from "@hello-pangea/dnd";
 import type { MouseEvent } from "react";
 import { Badge } from "@/components/ui/badge";
+import { PriorityBadge } from "@/components/leads/PriorityBadge";
 import { cn } from "@/lib/utils";
 import type { Lead } from "@/lib/types/leads";
 import { KanbanCardActions } from "./KanbanCardActions";
@@ -69,6 +70,12 @@ export function KanbanCard({
             </h3>
             <KanbanCardActions lead={lead} pipelineId={pipelineId} />
           </div>
+
+          {lead.contact?.priority_tag && (
+            <div className="mt-2">
+              <PriorityBadge tag={lead.contact.priority_tag} size="sm" />
+            </div>
+          )}
 
           {value && (
             <p className="mt-2 text-xs font-medium tabular-nums text-text-muted">

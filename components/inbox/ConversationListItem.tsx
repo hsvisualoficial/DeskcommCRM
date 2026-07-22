@@ -4,6 +4,7 @@ import { ptBR } from "date-fns/locale";
 import { Robot } from "@/lib/ui/icons";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { PriorityBadge } from "@/components/leads/PriorityBadge";
 import { cn } from "@/lib/utils";
 import type { ConversationWithContact } from "@/hooks/inbox/useConversationsRealtime";
 
@@ -107,6 +108,9 @@ export function ConversationListItem({ conversation, isSelected, onSelect }: Pro
         </p>
 
         <div className="mt-1.5 flex flex-wrap items-center gap-1">
+          {c?.priority_tag && (
+            <PriorityBadge tag={c.priority_tag} size="sm" showLabel={false} />
+          )}
           {visibleTags.map((t) => (
             <Badge key={t} variant="secondary" className="h-4 px-1.5 text-[10px]">
               {t}

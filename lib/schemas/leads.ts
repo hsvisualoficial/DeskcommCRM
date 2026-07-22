@@ -34,9 +34,11 @@ export type WinLeadInput = z.infer<typeof winLeadSchema>;
  * Pipeline.settings.lost_reasons (jsonb array) can extend this list per-tenant.
  */
 export const CANONICAL_LOST_REASONS = [
-  "requested_by_customer",
   "price",
+  "no_profile",
+  "bought_competitor",
   "no_response",
+  "requested_by_customer",
   "product_unavailable",
   "cancelled_by_store",
   "cancelled_by_customer",
@@ -95,6 +97,8 @@ export const updateLeadSchema = z.object({
     .nullable()
     .optional(),
   tags: z.array(z.string()).optional(),
+  /** Dados por segmento (orçamento, tipo de imóvel/serviço, etc.). */
+  custom_fields: z.record(z.string(), z.unknown()).optional(),
 });
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
 

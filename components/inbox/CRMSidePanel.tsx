@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { PriorityBadge } from "@/components/leads/PriorityBadge";
 import { Tag, Receipt, Users, ArrowRight } from "@/lib/ui/icons";
 import { createClient } from "@/lib/supabase/browser";
 import type { ConversationWithContact } from "@/hooks/inbox/useConversationsRealtime";
@@ -142,7 +143,10 @@ export function CRMSidePanel({ conversation }: Props) {
           Contato
         </h3>
         <Card className="mt-2 space-y-2 p-3 text-sm">
-          <div className="font-medium">{displayName}</div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="font-medium">{displayName}</div>
+            {contact?.priority_tag && <PriorityBadge tag={contact.priority_tag} size="sm" />}
+          </div>
           {contact?.phone_number && (
             <div className="text-xs text-muted-foreground">{contact.phone_number}</div>
           )}

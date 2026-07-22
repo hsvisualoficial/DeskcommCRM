@@ -5,6 +5,7 @@ import { useRealtimeChannel } from "@/hooks/realtime/useRealtimeChannel";
 import { apiClient } from "@/lib/api/client";
 import { showApiError } from "@/components/feedback/ApiErrorToast";
 import type { Conversation } from "@/lib/types/messaging";
+import type { PriorityTag } from "@/lib/leads/priority";
 
 export interface ContactSummary {
   id: string;
@@ -14,6 +15,8 @@ export interface ContactSummary {
   tags: string[];
   is_blocked: boolean;
   is_anonymized: boolean;
+  score: number;
+  priority_tag: PriorityTag | null;
 }
 
 export type ConversationWithContact = Conversation & {

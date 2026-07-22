@@ -4201,3 +4201,33 @@ revoke all on function public.fn_mark_conversation_message(uuid, text, text, tim
 grant execute on function public.fn_upsert_wa_contact(uuid, text, text, text, text, text) to service_role;
 grant execute on function public.fn_upsert_wa_conversation(uuid, uuid, uuid) to service_role;
 grant execute on function public.fn_mark_conversation_message(uuid, text, text, timestamptz) to service_role;
+
+-- ---- lead scoring SDR (migration 0029) ----
+-- contacts.score / priority_tag (gerada) / custom_fields. Idempotente + auto-curativo.
+alter table public.contacts
+  add column if not exists score integer not null default 0;
+alter table public.contacts
+  add column if not exists priority_tag text
+  generated always as (
+    case
+      when score >= 70 then 'HOT'
+      when score >= 40 then 'WARM'
+      else 'COLD'
+    end
+  ) stored;
+alter table public.contacts
+  add column if not exists custom_fields jsonb not null default '{}'::jsonb;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'contacts_score_range') then
+    alter table public.contacts
+      add constraint contacts_score_range check (score >= 0 and score <= 100);
+  end if;
+end $$;
+create index if not exists contacts_org_priority_idx
+  on public.contacts (organization_id, priority_tag);
+
+-- ---- whatsapp-media bucket (migration 0028) ----
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('whatsapp-media', 'whatsapp-media', false, null, null)
+on conflict (id) do nothing;

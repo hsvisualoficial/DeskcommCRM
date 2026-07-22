@@ -289,6 +289,7 @@ export async function updateLeadHandler(
     patch.expected_close_date = input.expected_close_date;
   }
   if (input.tags !== undefined) patch.tags = input.tags;
+  if (input.custom_fields !== undefined) patch.custom_fields = input.custom_fields;
 
   const { data: updated, error: updErr } = await supabase
     .from("crm_leads")

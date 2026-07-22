@@ -14,6 +14,8 @@ import { ROLE_RANK } from "@/lib/auth/types";
 import { TimelineView } from "@/components/contacts/TimelineView";
 import { EditContactDialog } from "@/components/contacts/EditContactDialog";
 import { AnonymizeDialog } from "@/components/contacts/AnonymizeDialog";
+import { PriorityBadge } from "@/components/leads/PriorityBadge";
+import { SEGMENT_CUSTOM_FIELDS } from "@/lib/leads/segment-fields";
 
 interface Props {
   contactId: string;
@@ -77,7 +79,8 @@ export function ContactDetailClient({ contactId }: Props) {
             {contact.email && contact.phone_number && <span>•</span>}
             {contact.phone_number && <span>{contact.phone_number}</span>}
           </div>
-          <div className="mt-2 flex flex-wrap gap-1">
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            {contact.priority_tag && <PriorityBadge tag={contact.priority_tag} />}
             {contact.tags.map((t) => (
               <Badge key={t} variant="neutral">{t}</Badge>
             ))}
@@ -124,6 +127,13 @@ export function ContactDetailClient({ contactId }: Props) {
                 <dd className="mt-1">{contact.source}</dd>
               </div>
               <div>
+                <dt className="text-xs uppercase text-muted-foreground">Prioridade / Score</dt>
+                <dd className="mt-1 flex items-center gap-2">
+                  {contact.priority_tag && <PriorityBadge tag={contact.priority_tag} />}
+                  <span className="tabular-nums text-text-muted">{contact.score}/100</span>
+                </dd>
+              </div>
+              <div>
                 <dt className="text-xs uppercase text-muted-foreground">Última atividade</dt>
                 <dd className="mt-1">
                   {contact.last_activity_at
@@ -149,6 +159,21 @@ export function ContactDetailClient({ contactId }: Props) {
                       ))}
                 </dd>
               </div>
+              {SEGMENT_CUSTOM_FIELDS.map((f) => {
+                const raw = contact.custom_fields?.[f.key];
+                const display =
+                  raw === null || raw === undefined || raw === ""
+                    ? "—"
+                    : f.type === "select"
+                      ? (f.options?.find((o) => o.value === raw)?.label ?? String(raw))
+                      : String(raw);
+                return (
+                  <div key={f.key}>
+                    <dt className="text-xs uppercase text-muted-foreground">{f.label}</dt>
+                    <dd className="mt-1">{display}</dd>
+                  </div>
+                );
+              })}
             </dl>
           </Card>
         </TabsContent>
