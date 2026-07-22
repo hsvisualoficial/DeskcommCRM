@@ -666,6 +666,104 @@ export type Database = {
           },
         ]
       }
+      chat_snippets: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          created_by_user_id: string | null
+          id: string
+          is_active: boolean
+          organization_id: string
+          shortcut: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          created_by_user_id?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          shortcut: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          shortcut?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_snippets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_notes: {
+        Row: {
+          author_user_id: string | null
+          body: string
+          contact_id: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          organization_id: string
+          source: string
+        }
+        Insert: {
+          author_user_id?: string | null
+          body: string
+          contact_id?: string | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          organization_id: string
+          source?: string
+        }
+        Update: {
+          author_user_id?: string | null
+          body?: string
+          contact_id?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          organization_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_notes_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_notes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           anonymized_at: string | null

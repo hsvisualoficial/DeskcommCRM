@@ -16,6 +16,7 @@ import { ConversationHeader } from "./ConversationHeader";
 import { CRMSidePanel } from "./CRMSidePanel";
 import { InboxKeyboardShortcuts } from "./InboxKeyboardShortcuts";
 import { ShortcutsHelpDialog } from "./ShortcutsHelpDialog";
+import { buildSnippetVariables } from "@/lib/inbox/snippet-vars";
 
 function tabToFilter(tab: InboxFiltersValue["tab"]): Partial<ConversationsFilters> {
   switch (tab) {
@@ -94,6 +95,11 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
     close.mutate({ conversation_id: selectedConversation.id });
   }, [close, selectedConversation]);
 
+  const composerVariables = useMemo(
+    () => buildSnippetVariables(selectedConversation?.contacts ?? null),
+    [selectedConversation],
+  );
+
   const blockedReason = selectedConversation?.contacts?.is_blocked
     ? "Contato bloqueado — envio de mensagens desabilitado."
     : selectedConversation?.contacts?.is_anonymized
@@ -128,6 +134,7 @@ export function InboxLayout({ initialSelectedId = null }: InboxLayoutProps = {})
               conversationId={selectedConversation.id}
               blockedReason={blockedReason}
               disabled={selectedConversation.status === "closed"}
+              variables={composerVariables}
             />
           </>
         ) : (

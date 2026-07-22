@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { PriorityBadge } from "@/components/leads/PriorityBadge";
+import { ConversationNotesPanel } from "./ConversationNotesPanel";
 import { Tag, Receipt, Users, ArrowRight } from "@/lib/ui/icons";
 import { createClient } from "@/lib/supabase/browser";
 import type { ConversationWithContact } from "@/hooks/inbox/useConversationsRealtime";
@@ -177,6 +178,10 @@ export function CRMSidePanel({ conversation }: Props) {
           </div>
         </Card>
       </section>
+
+      <Separator />
+
+      <ConversationNotesPanel conversationId={conversation.id} />
 
       <Separator />
 

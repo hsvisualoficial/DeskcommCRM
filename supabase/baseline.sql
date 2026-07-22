@@ -4231,3 +4231,46 @@ create index if not exists contacts_org_priority_idx
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('whatsapp-media', 'whatsapp-media', false, null, null)
 on conflict (id) do nothing;
+
+-- ---- snippets + notas internas (migration 0030) ----
+create table if not exists public.chat_snippets (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  shortcut text not null,
+  title text,
+  content text not null,
+  category text,
+  is_active boolean not null default true,
+  created_by_user_id uuid,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint chat_snippets_shortcut_format check (shortcut ~ '^[a-z0-9_-]{1,40}$'),
+  constraint chat_snippets_content_len check (char_length(content) between 1 and 4000)
+);
+create unique index if not exists chat_snippets_org_shortcut_idx on public.chat_snippets (organization_id, shortcut);
+create index if not exists chat_snippets_org_active_idx on public.chat_snippets (organization_id, is_active);
+alter table public.chat_snippets enable row level security;
+drop policy if exists tenant_isolation_chat_snippets_all on public.chat_snippets;
+create policy tenant_isolation_chat_snippets_all on public.chat_snippets for all
+  using (organization_id in (select * from public.fn_user_org_ids()))
+  with check (organization_id in (select * from public.fn_user_org_ids()));
+
+create table if not exists public.conversation_notes (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  conversation_id uuid not null references public.conversations(id) on delete cascade,
+  contact_id uuid,
+  body text not null,
+  source text not null default 'manual',
+  author_user_id uuid,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  constraint conversation_notes_source_check check (source = any (array['manual'::text, 'ai_summary'::text])),
+  constraint conversation_notes_body_len check (char_length(body) between 1 and 8000)
+);
+create index if not exists conversation_notes_conv_idx on public.conversation_notes (organization_id, conversation_id, created_at desc);
+alter table public.conversation_notes enable row level security;
+drop policy if exists tenant_isolation_conversation_notes_all on public.conversation_notes;
+create policy tenant_isolation_conversation_notes_all on public.conversation_notes for all
+  using (organization_id in (select * from public.fn_user_org_ids()))
+  with check (organization_id in (select * from public.fn_user_org_ids()));

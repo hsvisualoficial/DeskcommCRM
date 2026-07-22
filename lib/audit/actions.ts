@@ -116,4 +116,9 @@ export type AuditAction =
   | "ai_agent.run_completed"
   | "ai_agent.run_failed"
   | "channel.connected"
-  | "channel.reconnected";
+  | "channel.reconnected"
+  | "snippet.created"
+  | "snippet.updated"
+  | "snippet.deleted"
+  | "conversation.note_created"
+  | "conversation.summarized";

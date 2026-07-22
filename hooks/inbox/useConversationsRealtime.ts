@@ -17,6 +17,7 @@ export interface ContactSummary {
   is_anonymized: boolean;
   score: number;
   priority_tag: PriorityTag | null;
+  custom_fields: Record<string, unknown>;
 }
 
 export type ConversationWithContact = Conversation & {
